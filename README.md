@@ -51,6 +51,7 @@ The contact types available for calculation are:
 3. Set up a virtual environment (optional but recommended):
     ```sh
     python -m venv venv
+    source venv/bin/activate
     ```
 
 4. Install dependencies:
@@ -64,9 +65,15 @@ The contact types available for calculation are:
 
 2. Run the script with the path to your folder or file:
     ```sh
-    python3  main.py -f path_to_files/ [-m] [-c] [-s] [-o] [--help]
+    python3  main.py <-f> path_to_files/ [-m] [-c] [-s] [-o] [--help]
     ```
-3. If the -o (output) flag is used, a 'output' folder will be created, and the contacts of every file processed will be written in separate .txt files. 
+**Parameters:**
+ - <-f> <--files>: List of files in pdb/cif format (at least one required).
+ - [-m] [--mode]: Select "SingleCore" or "MultiCore" mode.
+ - [-c] [--ncores]: Number of cores to use (only needed on Multi mode). Default runs with all available cores.
+ - [-s] [--selcore]: Select specific core to run (int value).
+ - [-o] [--output]: Outputs the detailed results to files in ./outputs.
+
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
