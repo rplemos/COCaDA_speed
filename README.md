@@ -1,4 +1,4 @@
-# Contacts
+# Contacts (temporary name)
 
 
 ## Description
@@ -8,7 +8,7 @@ The code includes a customized parser for both PDB and CIF files, containing fun
 
 Additionaly, as comparison for demonstrating the efficiency of our method, a BioPython-dependent script is also included (in the folder BioPython), containing the same restrictions and contact definitions.
 
-The available contact types for calculation are:
+The contact types available for calculation are:
   - Hydrophobic
   - Hydrogen Bond
   - Attractive
@@ -70,6 +70,9 @@ The available contact types for calculation are:
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Citation
+Still not published.
 
 ## Contact
 For any questions or issues, please contact:
