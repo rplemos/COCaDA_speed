@@ -45,7 +45,7 @@ The contact types available for calculation are:
 
 2. Navigate into the project directory:
    ```sh
-   cd your-repo-name
+   cd Contacts
    ```
 
 3. Set up a virtual environment (optional but recommended):
