@@ -1,12 +1,11 @@
-# Contacts (temporary name)
-
+# COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices
 
 ## Description
 
-This project optimizes the calculation of atomic interactions in proteins, by using a set of fine-tuned Cα distances between every pair of aminoacid residues.
+COCαDA (Contact Optimization by alpha-Carbon Distance Analysis) optimizes the calculation of atomic interactions in proteins, by using a set of fine-tuned Cα distances between every pair of aminoacid residues.
 The code includes a customized parser for both PDB and CIF files, containing functionalities for handling large files, filtering out specific residues and interactions, and calculating geometric properties such as centroid and normal vectors for aromatic residues.
 
-Additionaly, as comparison for demonstrating the efficiency of our method, a BioPython-dependent script is also included (in the folder BioPython), containing the same restrictions and contact definitions.
+Additionaly, as comparison for demonstrating the efficiency of our method, a Biopython-dependent script is also included (in the folder Biopython), containing the same restrictions and contact definitions.
 
 The contact types available for calculation are:
   - Hydrophobic
@@ -65,7 +64,7 @@ The contact types available for calculation are:
 
 2. Run the script with the path to your folder or file:
     ```sh
-    python3  main.py <-f> path_to_files/ [-m] [-c] [-s] [-o] [--help]
+    python3  main.py <-f> path_to_files/ [-m] [-c] [-s] [-o] [-h]
     ```
 **Parameters:**
  - <-f> <--files>: List of files in pdb/cif format (at least one required).
@@ -73,6 +72,7 @@ The contact types available for calculation are:
  - [-c] [--ncores]: Number of cores to use (only needed on Multi mode). Default runs with all available cores.
  - [-s] [--selcore]: Select specific core to run (int value).
  - [-o] [--output]: Outputs the detailed results to files in ./outputs.
+ - [-h] [--help]: Shows usage and instructions.
 
 
 ## License
@@ -84,8 +84,14 @@ Still not published.
 ## Contact
 For any questions or issues, please contact:
 
-Rafael Lemos - PhD Student in Bioinformatics @ Federal University of Minas Gerais
+Rafael Pereira Lemos - PhD Student in Bioinformatics @ Federal University of Minas Gerais
 
 Email: rafaellemos42@gmail.com
 
 GitHub: https://github.com/rplemos
+
+## Contributions and Acknowledgements
+ - Prof. Raquel Cardoso de Melo Minardi, UFMG;
+ - Prof. Sabrina de Azevedo Silveira, UFV;
+ - Dr. Diego César Batista Mariano, UFMG;
+ - All the 'Laboratory of Bioinformatics and Systems' team.
