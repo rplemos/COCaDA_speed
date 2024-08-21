@@ -1,8 +1,8 @@
-# COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices
-
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/4b0b24c6-83d0-4177-a53b-69d84658a6b8" alt="COCaDA_logomenor">
+  <img src="https://github.com/user-attachments/assets/57f17d48-baf4-4bed-97ab-6b817e31dc26" alt="COCaDA_logomenor">
 </p>
+
+# COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices
 
 ## Description
 
