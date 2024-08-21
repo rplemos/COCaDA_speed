@@ -1,11 +1,8 @@
-<div style="display: flex; align-items: center;">
-  <div style="flex: 1;">
-    <h1 style=>COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices</h1>
-  </div>
-  <div>
-    <img src="https://github.com/user-attachments/assets/1f0bec3f-615b-4786-a547-4752fcb16038" width="250" height="250">
-  </div>
-</div>
+# COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/4b0b24c6-83d0-4177-a53b-69d84658a6b8" alt="COCaDA_logomenor">
+</p>
 
 ## Description
 
