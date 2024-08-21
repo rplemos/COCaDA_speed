@@ -1,4 +1,11 @@
-# COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices
+<div style="display: flex; align-items: center;">
+  <div style="flex: 1;">
+    <h1 style=>COCαDA - Large Scale Protein Interatomic Contact Optimization by Cα Distance Matrices</h1>
+  </div>
+  <div>
+    <img src="https://github.com/user-attachments/assets/1f0bec3f-615b-4786-a547-4752fcb16038" width="250" height="250">
+  </div>
+</div>
 
 ## Description
 
@@ -30,7 +37,7 @@ The contact types available for calculation are:
 - For both methods:
   - Python==3.x
   - NumPy==2.0.1
-  - psutil==6.0.0
+  - psutil==6.0.0 (for MultiCore usage)
 
 - Exclusively for BioPython:
   - Biopython==1.84
@@ -39,7 +46,7 @@ The contact types available for calculation are:
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/rplemos/Contacts.git
+   git clone https://github.com/LBS-UFMG/COCaDA.git
    ```
 
 2. Navigate into the project directory:
