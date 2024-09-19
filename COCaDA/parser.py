@@ -12,10 +12,10 @@ from numpy.linalg import svd
 
 
 stacking = {
-    'HIS':[10, 'CG','ND1','CE1','NE2','CD2'],
-    'PHE':[11, 'CG','CD1','CE1','CZ','CE2','CD2'],
-    'TRP':[14, 'CG','CD1','NE1','CE2','CZ2','CH2','CZ3','CE3','CD2'],
-    'TYR':[12, 'CG','CD1','CE1','CZ','CE2','CD2'],
+    'H':[10, 'CG','ND1','CE1','NE2','CD2'],
+    'F':[11, 'CG','CD1','CE1','CZ','CE2','CD2'],
+    'W':[14, 'CG','CD1','NE1','CE2','CZ2','CH2','CZ3','CE3','CD2'],
+    'Y':[12, 'CG','CD1','CE1','CZ','CE2','CD2'],
 }
 
 residue_mapping = {
@@ -115,7 +115,9 @@ def parse_pdb(pdb_file):
                     
                     # if ring has only one conformation and the residue is complete (all atoms populated)
                     if all_atoms_have_occupancy_one and len(current_residue.atoms) == stacking[current_residue.resname][0]:
-                        ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms[5:]]) # ignores [N, CA, C, O] and [RNG] atoms
+                        #ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms[5:]]) # ignores [N, CA, C, O] and [RNG] atoms
+                        ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms if atom.atomname in stacking[current_residue.resname]])
+
                         centroid_atom = centroid(current_residue, ring_atoms)
                         current_residue.atoms.append(centroid_atom)
                         current_residue.ring = True
