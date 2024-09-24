@@ -131,14 +131,12 @@ def process_result(result, output_folder):
     if result:
         protein, contacts_list, process_time = result
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
-        
+
+        print(output_data)
         if output_folder:
             with open(f"{output_folder}/{protein.id}_contacts.txt", "w") as f:
-                print(output_data)
                 f.write(output_data + "\n")
                 f.write(contacts.show_contacts(contacts_list))
-        else:
-            print(output_data)
 
 
 if __name__ == "__main__":
