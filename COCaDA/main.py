@@ -15,7 +15,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 from psutil import Process
 
-
 def main():
     """
     Main function for the script.
@@ -25,18 +24,20 @@ def main():
     It also manages core affinity, output folder creation, and timing of the entire process.
     """
     global_time_start = timer()
+    
     file_list, core, output = argparser.cl_parse()
-
+    
     if core is not None:  # Set specific core affinity
         Process(os.getpid()).cpu_affinity(core)
+        print("Multicore mode selected.")
         if len(core) == 1: # One specific core
-            print(f"Running on core {core[0]}")
+            print(f"Running on core {core[0]}.")
         elif core[-1] - core[0] == len(core) - 1:  # Check if it's a range
-            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}")
+            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}.")
         else: # List
-            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}")
+            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}.")
     else:
-        print("Running on single mode.") 
+        print("Running on single mode with no specific core.") 
                
     if output:
         output_folder = "./outputs/"
@@ -44,7 +45,7 @@ def main():
             os.makedirs(output_folder)
     else:
         output_folder = None
-
+        
     process_func = single if core is None else multi
     process_func(file_list, output_folder, core)
 

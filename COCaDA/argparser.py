@@ -31,24 +31,24 @@ def cl_parse():
     try:
         parser = ArgumentParser(description='PDB/mmcif parser and fast contact detection using flexible CA distances.')
         parser.add_argument('-f', '--files', nargs='+', required=True, type=validate_file, help='List of files in pdb/cif format (at least one required).')
-        parser.add_argument('-m', '--multicore', required=False, action='store_true', help='Use MultiCore mode. Default uses all cores, use the "-c" flag to specify them.')
-        parser.add_argument('-c', '--core', required=False, help='Select specific cores to run. Options: single number (x), range (x-y) or list (x,y,z,...).')
+        parser.add_argument('-m', '--multicore', required=False, nargs='?', const=0, help='Use MultiCore mode. Default uses all cores, use the "-c" flag to specify them.')
         parser.add_argument('-o', '--output', required=False, action='store_true', help='Outputs the results to files in ./outputs.')
-        #parser.add_argument('-d', '--distance', required=False, default=0, help='Sets maximum distance value')
 
         args = parser.parse_args()
 
         files = args.files
-        
-        ncores = cpu_count()        
-        if args.multicore:
-            core = args.core
-            core = validate_core(core, ncores) if core else list(range(ncores))
+                
+        ncores = cpu_count()
+        multi = args.multicore
+        if multi is not None:
+            if multi == 0:
+                core = list(range(ncores))
+            else:
+                core = validate_core(multi, ncores)
         else:
             core = None
                                 
         output = args.output
-        #distance = args.distance
         
     except ArgumentError as e:
         print(f"Argument Error: {str(e)}")
@@ -62,7 +62,7 @@ def cl_parse():
         print(f"An unexpected error occurred: {str(e)}")
         exit(1)
     
-    return files, core, output, #distance
+    return files, core, output
         
         
 def validate_file(value):
