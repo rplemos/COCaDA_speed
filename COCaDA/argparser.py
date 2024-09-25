@@ -7,6 +7,8 @@ License: MIT License
 
 from sys import exit
 from argparse import ArgumentParser, ArgumentError, ArgumentTypeError
+from multiprocessing import cpu_count
+import re
 
 
 def cl_parse():
@@ -16,9 +18,8 @@ def cl_parse():
     Returns:
         tuple: A tuple containing the parsed values:
             - files (list): List of input files.
-            - ncores (int): Number of cores to use.
-            - mode (str): Selected processing mode.
-            - selcore (str): Selected core (if provided).
+            - multicore (bool): Select MultiCore mode.
+            - core (int): Select cores to use.
             - output (bool): Whether to output results to files.
 
     Raises:
@@ -30,21 +31,24 @@ def cl_parse():
     try:
         parser = ArgumentParser(description='PDB/mmcif parser and fast contact detection using flexible CA distances.')
         parser.add_argument('-f', '--files', nargs='+', required=True, type=validate_file, help='List of files in pdb/cif format (at least one required).')
-        parser.add_argument('-m', '--mode', required=False, default='Single', help='Select "SingleCore" or "MultiCore" mode.')
-        parser.add_argument('-c', '--ncores', type=int, required=False, default=0, help='Number of cores to use (only needed on Multi mode). Default runs with all available cores')
-        parser.add_argument('-s', '--selcore', required=False, help='Select specific core.')
+        parser.add_argument('-m', '--multicore', required=False, action='store_true', help='Use MultiCore mode. Default uses all cores, use the "-c" flag to specify them.')
+        parser.add_argument('-c', '--core', required=False, help='Select specific cores to run. Options: single number (x), range (x-y) or list (x,y,z,...).')
         parser.add_argument('-o', '--output', required=False, action='store_true', help='Outputs the results to files in ./outputs.')
+        #parser.add_argument('-d', '--distance', required=False, default=0, help='Sets maximum distance value')
 
         args = parser.parse_args()
 
         files = args.files
-        ncores = args.ncores
-        mode = args.mode
-        modes = ["Single", "Multi"]
-        if mode not in modes:
-            raise ValueError("Invalid Mode!")
-        selcore = args.selcore
+        
+        ncores = cpu_count()        
+        if args.multicore:
+            core = args.core
+            core = validate_core(core, ncores) if core else list(range(ncores))
+        else:
+            core = None
+                                
         output = args.output
+        #distance = args.distance
         
     except ArgumentError as e:
         print(f"Argument Error: {str(e)}")
@@ -58,7 +62,7 @@ def cl_parse():
         print(f"An unexpected error occurred: {str(e)}")
         exit(1)
     
-    return files, ncores, mode, selcore, output
+    return files, core, output, #distance
         
         
 def validate_file(value):
@@ -81,3 +85,44 @@ def validate_file(value):
         return value
     else:
         raise ArgumentTypeError(f"{value} is not a valid file. File must end with '.pdb' or '.cif'")
+
+
+def validate_core(value, ncores):
+    """
+    Validates the --core argument to ensure it follows the correct format.
+    Supports single core, range of cores, and list of cores.
+
+    Args:
+        value (str): The value input by the user for the --core argument.
+        ncores (int): The maximum number of cores on the system.
+
+    Returns:
+        list: A list of valid cores to use.
+
+    Raises:
+        ArgumentTypeError: If the input is not valid or exceeds available cores.
+    """
+    # Check if it's a single core
+    if value.isdigit():
+        core = int(value)
+        if core < 0 or core >= ncores:
+            raise ArgumentTypeError(f"Core number {core} exceeds available cores (max: {ncores - 1})")
+        return [core]
+    
+    # Check if it's a range (e.g. 10-19)
+    range_match = re.match(r'^(\d+)-(\d+)$', value)
+    if range_match:
+        start_core, end_core = map(int, range_match.groups())
+        if start_core < 0 or end_core >= ncores or start_core > end_core:
+            raise ArgumentTypeError(f"Invalid range {start_core}-{end_core}, ensure it's within [0-{ncores - 1}]")
+        return list(range(start_core, end_core + 1))
+
+    # Check if it's a list of cores (e.g. 10,32,65)
+    list_match = re.match(r'^(\d+(,\d+)+)$', value)
+    if list_match:
+        core_list = list(map(int, value.split(',')))
+        if any(core < 0 or core >= ncores for core in core_list):
+            raise ArgumentTypeError(f"One or more cores exceed available cores (max: {ncores - 1})")
+        return core_list
+    
+    raise ArgumentTypeError(f"Invalid core format: {value}. Use a single core, a range (x-y), or a list (x,y,z).")
