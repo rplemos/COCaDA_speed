@@ -5,15 +5,14 @@ Date: 12/08/2024
 License: MIT License
 """
 
-import parser
-import argparser
-import contacts
-
 import os
 from timeit import default_timer as timer
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import cpu_count
 from psutil import Process
+
+import parser
+import argparser
+import contacts
 
 def main():
     """
