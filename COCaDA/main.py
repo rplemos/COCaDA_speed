@@ -8,7 +8,6 @@ License: MIT License
 import os
 from timeit import default_timer as timer
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from multiprocessing import cpu_count
 from psutil import Process
 
 import parser
@@ -24,20 +23,29 @@ def main():
     It also manages core affinity, output folder creation, and timing of the entire process.
     """
     global_time_start = timer()
-    file_list, core, mode, cnum, output = argparser.cl_parse()
-
-    if cnum:  # Set specific core affinity
-        Process(os.getpid()).cpu_affinity([int(cnum)])
-        print(f"Running on core {cnum}")
     
+    file_list, core, output = argparser.cl_parse()
+    
+    if core is not None:  # Set specific core affinity
+        Process(os.getpid()).cpu_affinity(core)
+        print("Multicore mode selected.")
+        if len(core) == 1: # One specific core
+            print(f"Running on core {core[0]}.")
+        elif core[-1] - core[0] == len(core) - 1:  # Check if it's a range
+            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}.")
+        else: # List
+            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}.")
+    else:
+        print("Running on single mode with no specific core.") 
+               
     if output:
         output_folder = "./outputs/"
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
     else:
         output_folder = None
-
-    process_func = single if mode == "Single" else multi
+        
+    process_func = single if core is None else multi
     process_func(file_list, output_folder, core)
 
     print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
@@ -50,7 +58,6 @@ def single(file_list, output_folder, core=None):
     Args:
         file_list (list): List of file paths to process.
         output_folder (str): The directory where output files will be saved (or None if no output).
-        core: Unused, kept for compatibility with multi-core.
 
     This function processes each file in the list sequentially, detects contacts, and outputs
     the results to the console or to a file, depending on the 'output' flag.
@@ -63,21 +70,19 @@ def single(file_list, output_folder, core=None):
             print(f"Error: {e}")
 
 
-def multi(file_list, output_folder, core):
+def multi(file_list, output_folder,core):
     """
     Processes a list of files in multi-core mode using parallel processing.
 
     Args:
         file_list (list): List of file paths to process.
         output_folder (str): The directory where output files will be saved (or None if no output).
-        core (int): The number of cores to use for parallel processing. If set to 0, all available cores are used.
 
     This function processes the files in the list using a process pool with the specified number of cores.
     """
-    core = cpu_count() if core == 0 else core
-    print(f"Starting processing with {core} cores")
-    
-    with ProcessPoolExecutor(max_workers=core) as executor:
+
+    with ProcessPoolExecutor(max_workers=len(core)) as executor:
+
         futures = {executor.submit(process_file, file): file for file in file_list}
         for future in as_completed(futures):
             try:
