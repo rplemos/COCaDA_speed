@@ -5,16 +5,15 @@ Date: 12/08/2024
 License: MIT License
 """
 
-import parser
-import argparser
-import contacts
-
 import os
 from timeit import default_timer as timer
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 from psutil import Process
 
+import parser
+import argparser
+import contacts
 
 def main():
     """
@@ -41,7 +40,7 @@ def main():
     process_func = single if mode == "Single" else multi
     process_func(file_list, output_folder, core)
 
-    print(f"Total time elapsed: {f"{(timer() - global_time_start):.3f}s"}\n")
+    print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
 
 
 def single(file_list, output_folder, core=None):
@@ -76,7 +75,7 @@ def multi(file_list, output_folder, core):
     This function processes the files in the list using a process pool with the specified number of cores.
     """
     core = cpu_count() if core == 0 else core
-    print(f"Starting processing with {core} cores") 
+    print(f"Starting processing with {core} cores")
     
     with ProcessPoolExecutor(max_workers=core) as executor:
         futures = {executor.submit(process_file, file): file for file in file_list}
