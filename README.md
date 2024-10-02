@@ -22,10 +22,12 @@ The contact types available for calculation are:
 
 ## Features
 
+- **Fast Processing:** COCaDA averages 2.5x faster processing times against Fixed Cutoffs definitions, and 6x faster against Biopython's NeighborSearch.
 - **PDB and CIF Parsing:** Supports parsing both PDB and CIF files to extract atomic and residue information.
 - **Residue Filtering:** Ignores low-quality atoms, water molecules, and problematic/erroneous information.
 - **Interaction Analysis:** Identifies contacts between specified types of atoms based on predefined conditions.
 - **Aromatic Residue Analysis:** Computes centroids and normal vectors for aromatic residues, to determine aromatic stacking contacts.
+- **Multi-Core Processing:** All analyzes can be run on any combination of cores on the user's computer.
 
 ## Installation
 
@@ -68,13 +70,11 @@ The contact types available for calculation are:
 
 2. Run the script with the path to your folder or file:
     ```sh
-    python3  main.py <-f> path_to_files/ [-m] [-c] [-s] [-o] [-h]
+    python3  main.py <-f> path_to_files/ [-m] [-o] [-h]
     ```
 **Parameters:**
- - <-f> <--files>: List of files in pdb/cif format (at least one required).
- - [-m] [--mode]: Select "SingleCore" or "MultiCore" mode.
- - [-c] [--ncores]: Number of cores to use (only needed on Multi mode). Default runs with all available cores.
- - [-s] [--selcore]: Select specific core to run (int value).
+ - <-f> <--files>: List of files in pdb/cif format (at least one required). Wildcards are accepted (ex. -f *.cif).
+ - [-m] [--mode]: Use Multi-Core mode. Default uses all available cores, and selections can be defined based on the following: -m X = specific single core. -m X-Y = range of cores from X to Y. -m X,Y,Z... = specific multiple cores.
  - [-o] [--output]: Outputs the detailed results to files in ./outputs.
  - [-h] [--help]: Shows usage and instructions.
 
