@@ -82,6 +82,7 @@ def multi(file_list, output_folder,core):
     """
 
     with ProcessPoolExecutor(max_workers=len(core)) as executor:
+
         futures = {executor.submit(process_file, file): file for file in file_list}
         for future in as_completed(futures):
             try:
@@ -134,7 +135,7 @@ def process_result(result, output_folder):
     if result:
         protein, contacts_list, process_time = result
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
-        
+
         print(output_data)
         if output_folder:
             with open(f"{output_folder}/{protein.id}_contacts.txt", "w") as f:
