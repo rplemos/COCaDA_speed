@@ -39,25 +39,24 @@ def main():
         print("Running on single mode with no specific core.") 
                
     if output:
-        output_folder = "./outputs/"
-        if not os.path.exists(output_folder):
-            os.makedirs(output_folder)
+        if not os.path.exists(output):
+            os.makedirs(output)
     else:
-        output_folder = None
+        output = None
         
     process_func = single if core is None else multi
-    process_func(file_list, output_folder, core)
+    process_func(file_list, output, core)
 
     print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
 
 
-def single(file_list, output_folder, core=None):
+def single(file_list, output, core=None):
     """
     Processes a list of files in single-core mode.
 
     Args:
         file_list (list): List of file paths to process.
-        output_folder (str): The directory where output files will be saved (or None if no output).
+        output (str): The directory where output files will be saved (or None if no output).
 
     This function processes each file in the list sequentially, detects contacts, and outputs
     the results to the console or to a file, depending on the 'output' flag.
@@ -65,18 +64,18 @@ def single(file_list, output_folder, core=None):
     for file in file_list:
         try:
             result = process_file(file)
-            process_result(result, output_folder)
+            process_result(result, output)
         except Exception as e:
             print(f"Error: {e}")
 
 
-def multi(file_list, output_folder,core):
+def multi(file_list, output,core):
     """
     Processes a list of files in multi-core mode using parallel processing.
 
     Args:
         file_list (list): List of file paths to process.
-        output_folder (str): The directory where output files will be saved (or None if no output).
+        output (str): The directory where output files will be saved (or None if no output).
 
     This function processes the files in the list using a process pool with the specified number of cores.
     """
@@ -86,7 +85,7 @@ def multi(file_list, output_folder,core):
         futures = {executor.submit(process_file, file): file for file in file_list}
         for future in as_completed(futures):
             try:
-                process_result(future.result(), output_folder)
+                process_result(future.result(), output)
             except Exception as e:
                 print(f"Error: {e}")
             finally:
@@ -124,21 +123,21 @@ def process_file(file_path):
         return None
 
 
-def process_result(result, output_folder):
+def process_result(result, output):
     """
     Handles the result of processing a file.
 
     Args:
         result (tuple): A tuple containing the processed Protein object, contacts list, and processing time.
-        output_folder (str): The directory where output files will be saved.
+        output (str): The directory where output files will be saved.
     """
     if result:
         protein, contacts_list, process_time = result
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
 
         print(output_data)
-        if output_folder:
-            with open(f"{output_folder}/{protein.id}_contacts.txt", "w") as f:
+        if output:
+            with open(f"{output}/{protein.id}_contacts.txt", "w") as f:
                 f.write(output_data + "\n")
                 f.write(contacts.show_contacts(contacts_list))
 
