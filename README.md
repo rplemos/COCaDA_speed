@@ -11,7 +11,7 @@ The code includes a customized parser for both PDB and CIF files, containing fun
 
 Additionaly, as comparison for demonstrating the efficiency of our method, a Biopython-dependent script is also included (in the folder Biopython), containing the same restrictions and contact definitions.
 
-The contact types available for calculation are:
+The contact types available are:
   - Hydrophobic
   - Hydrogen Bond
   - Attractive
@@ -50,7 +50,7 @@ The contact types available for calculation are:
 
 2. Navigate into the project directory:
    ```sh
-   cd Contacts
+   cd COCaDA
    ```
 
 3. Set up a virtual environment (optional but recommended):
@@ -64,13 +64,13 @@ The contact types available for calculation are:
     pip install -r requirements.txt
     ```
 ## Usage
-### To run the Flexible Distances script:
+### To run COCaDA:
 
 1. Ensure you are in the project directory and the virtual environment is activated (if used).
 
 2. Run the script with the path to your folder or file:
     ```sh
-    python3  main.py <-f> path_to_files/ [-m] [-o] [-h]
+    python3  main.py <-f> path_to_files/<.cif/.pdb> [-m] [-o] [-h]
     ```
 **Parameters:**
  - <-f> <--files>: List of files in pdb/cif format (at least one required). Wildcards are accepted (ex. -f *.cif).
