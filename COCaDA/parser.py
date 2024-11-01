@@ -159,6 +159,8 @@ def parse_cif(cif_file):
     atominfo_block = False # ATOM        lines
     atom_lines = []
     models = []
+    title_block = False
+    title = None
 
     with open(cif_file) as f:
         for line in f:
@@ -166,14 +168,25 @@ def parse_cif(cif_file):
 
             if line.startswith("_entry.id"):
                 current_protein.id = line[-4:]
-                
+
+            # this title block can definitely be simplified, but there are a lot of edge cases to handle
+            # current_protein.set_title() is set before returning the whole object
             if line.startswith("_struct.title"):
-                next_line = next(f)
-                if not next_line.startswith("_"):
-                    current_protein.set_title(f"'{next_line.strip().title().replace("'","").replace(",","-")}'")
+                title = line[len("_struct.title"):].strip()           
+                if title.startswith(";") and title.endswith(";"):
+                    title = title[1:-1].strip()
+                elif title == "":
+                    title_block = True
+            elif title_block:
+                if line.startswith(";"):
+                    if title == "":
+                        title = line[1:].strip()
+                    else:
+                        title_block = False
                 else:
-                    current_protein.set_title(f"'{line.split("'")[1].title().replace("'","").replace(",","-")}'")
-                            
+                    title += line.strip()
+                    title_block = False
+                                        
             if line.startswith("_atom_site.group_PDB"): # entering ATOM definition block
                 atomsite_block = True
                 line = line.split(".")[1]
@@ -275,7 +288,8 @@ def parse_cif(cif_file):
                 if resname in residue_mapping:
                     current_chain.residues.append(current_residue) # appends the last residue
                 atominfo_block = False 
-    
+                
+    current_protein.set_title(title.title().replace("'",""))
     return current_protein
 
 
