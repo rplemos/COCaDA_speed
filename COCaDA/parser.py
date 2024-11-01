@@ -167,10 +167,14 @@ def parse_cif(cif_file):
             if line.startswith("_entry.id"):
                 current_protein.id = line[-4:]
                 
-            elif line.startswith("TITLE"):
-                current_protein.set_title(line[10:])
+            if line.startswith("_struct.title"):
+                next_line = next(f)
+                if not next_line.startswith("_"):
+                    current_protein.set_title(f"'{next_line.strip().title().replace("'","").replace(",","-")}'")
+                else:
+                    current_protein.set_title(f"'{line.split("'")[1].title().replace("'","").replace(",","-")}'")
                             
-            elif line.startswith("_atom_site.group_PDB"): # entering ATOM definition block
+            if line.startswith("_atom_site.group_PDB"): # entering ATOM definition block
                 atomsite_block = True
                 line = line.split(".")[1]
                 atom_lines.append(line)
