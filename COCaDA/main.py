@@ -31,7 +31,7 @@ def main():
         print("Multicore mode selected.")
         if len(core) == 1: # One specific core
             print(f"Running on core {core[0]}.")
-        elif core[-1] - core[0] == len(core) - 1:  # Check if it's a range
+        elif core[-1] - core[0] == len(core) - 1:  # Range
             print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}.")
         else: # List
             print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}.")
@@ -140,6 +140,9 @@ def process_result(result, output):
             with open(f"{output}/{protein.id}_contacts.txt", "w") as f:
                 f.write(output_data + "\n")
                 f.write(contacts.show_contacts(contacts_list))
+                
+            with open(f"{output}/list.csv","a") as f:
+                f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)}\n")
 
 
 if __name__ == "__main__":

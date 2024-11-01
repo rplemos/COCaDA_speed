@@ -193,6 +193,22 @@ class Contact:
             str: A string describing the contact, including chain, residue, atom information, and distance.
         """
         
+        map_type = {
+            "hydrogen_bond":"HB",
+            "hydrophobic":"HY",
+            "attractive":"AT",
+            "repulsive":"RE",
+            "salt_bridge":"SB",
+            "disulfide_bond":"DS",
+            "stacking-other":"SOT",
+            "stacking-parallel":"SPA",
+            "stacking-perpendicular":"SPE"
+        }
+        
         all_values = list(self.__dict__.values())
-        return f"{all_values[1]}-{all_values[2]}{all_values[3]}:{all_values[4]} and {all_values[6]}-{all_values[7]}{all_values[8]}:{all_values[9]}: {all_values[10]} A. {all_values[11].capitalize()}"
+        all_values[11] = map_type[all_values[11]]
+        return f"{all_values[1]},{all_values[2]},{all_values[3]},{all_values[4]},{all_values[6]},{all_values[7]},{all_values[8]},{all_values[9]},{all_values[10]},{all_values[11]}"
+    
+        # verbose
+        # return f"{all_values[1]}-{all_values[2]}{all_values[3]}:{all_values[4]} and {all_values[6]}-{all_values[7]}{all_values[8]}:{all_values[9]}: {all_values[10]} A. {all_values[11].capitalize()}"
 

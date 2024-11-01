@@ -107,23 +107,12 @@ def show_contacts(contacts):
         str: A formatted string summarizing the contact information.
     """
     
-    category_counts = {}
     output = []
-
-    for contact in contacts:
-        category = contact.type
-        category_counts[category] = category_counts.get(category, 0) + 1
     
-    sorted_categories = sorted(category_counts.items(), key=lambda x: x[1])
-
-    for category, count in sorted_categories:
-        output.append(f"\nNumber of {category} occurrences: {count}")
-        output.append(f"All entries for {category}:")
-        for entry in contacts:
-            if entry.type == category:
-                output.append(f"\t{entry.print_text()}")
-    output.append("\n")
-    
+    output.append("\nChain1,Res1,ResName1,Atom1,Chain2,Res2,ResName2,Atom2,Distance,Type")
+    for entry in contacts:
+        output.append(entry.print_text())
+        
     return "\n".join(output) # returns as a string to be written directly into the file
 
 
