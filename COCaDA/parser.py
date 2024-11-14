@@ -7,6 +7,7 @@ License: MIT License
 
 from classes import Protein, Chain, Residue, Atom
 
+import os
 from numpy import mean, array
 from numpy.linalg import svd
 
@@ -41,25 +42,27 @@ def parse_pdb(pdb_file):
     residue names, aromatic residues, and low-quality atoms. The function also assigns a unique
     identifier and title to the protein based on the header information.
     """
-    
     current_protein = Protein()
     current_chain = None
     current_residue = None
 
     with open(pdb_file) as f:
+        
+        current_protein.id = os.path.basename(pdb_file).split(".")[0]
+
         for line in f:
             line = line.strip()
             
             if line == "ENDMDL":
-                return current_protein
-
-            if line.startswith("HEADER") and ("RNA" in line or "DNA" in line):
-                current_protein.id = pdb_file.split("/")[-1][:4]
-                current_protein.title = "DNA/RNA"
                 break
-            
+
             elif line.startswith("HEADER"):
-                current_protein.id = line[62:]
+                if ("RNA" in line or "DNA" in line): 
+                    current_protein.id = pdb_file.split("/")[-1][:4]
+                    current_protein.title = "DNA/RNA"
+                    break
+                else:
+                    current_protein.id = line[62:]
                 
             elif line.startswith("TITLE"):
                 current_protein.set_title(line[10:])
@@ -71,18 +74,20 @@ def parse_pdb(pdb_file):
                     continue
                 resname = line[17:20]
                 
-                if resname == "HIE" or resname == "HID":  # alternative names for protonated histidines
-                    resname = "HIS" 
-                
+                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]:
+  # alternative names for protonated histidines
+                    resname = "HIS"
+                                    
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping[line[17:20]]                       
+                resname = residue_mapping.get(resname)                       
 
                 if current_chain is None or current_chain.id != chain_id:  # new chain
                     residues = []
                     current_chain = Chain(chain_id, residues)
                     current_protein.chains.append(current_chain)
+                    current_residue = None
 
                 if current_residue is None:  # new residue
                     atoms = []
@@ -102,7 +107,9 @@ def parse_pdb(pdb_file):
                 x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
                 occupancy = float(line[55:60])
                 
-                if occupancy >= 0.5: # ignores low quality atoms
+                if occupancy == 0 or occupancy >= 0.5: # ignores low quality atoms
+                    if current_residue.atoms and current_residue.atoms[-1].atomname == atomname: # ignores the second one if both have occupancy == 0.5
+                        continue
                     atom = Atom(atomname, x, y, z, occupancy, current_residue) # creates atom
                     current_residue.atoms.append(atom)
                 else:
@@ -159,20 +166,23 @@ def parse_cif(cif_file):
     atominfo_block = False # ATOM        lines
     atom_lines = []
     models = []
-    title_block = False
     title = None
+    title_block = False
 
     with open(cif_file) as f:
+        
+        current_protein.id = os.path.basename(cif_file).split(".")[0]
+        
         for line in f:
             line = line.strip()
 
-            if line.startswith("_entry.id"):
-                current_protein.id = line[-4:]
+            # if line.startswith("_entry.id"):
+            #     current_protein.id = line[-4:]
 
             # this title block can definitely be simplified, but there are a lot of edge cases to handle
             # current_protein.set_title() is set before returning the whole object
             if line.startswith("_struct.title"):
-                title = line[len("_struct.title"):].strip()           
+                title = line[len("_struct.title"):].strip()
                 if title.startswith(";") and title.endswith(";"):
                     title = title[1:-1].strip()
                 elif title == "":
@@ -231,14 +241,14 @@ def parse_cif(cif_file):
                     continue
                 resname = line[resname_index]
 
-                if resname == "HIE" or resname == "HID":  # alternative names for protonated histidines
-                    resname = "HIS"  
+                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]: # alternative names for protonated histidines
+                    resname = "HIS" 
 
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping[resname]                            
-
+                resname = residue_mapping.get(resname)
+                
                 if current_chain is None or current_chain.id != chain_id:  # new chain
                     residues = []
                     current_chain = Chain(chain_id, residues)
@@ -263,7 +273,9 @@ def parse_cif(cif_file):
                 x, y, z = float(line[x_index]), float(line[y_index]), float(line[z_index])
                 occupancy = float(line[occupancy_index])
                     
-                if occupancy >= 0.5 and (line[alt_occupancy_index] == "." or line[alt_occupancy_index] == "A"): # ignores low quality atoms
+                if (occupancy == 0 or occupancy >= 0.5): # ignores low quality atoms
+                    if current_residue.atoms and current_residue.atoms[-1].atomname == atomname: # ignores the second one if both have occupancy == 0.5
+                        continue
                     atom = Atom(atomname, x, y, z, occupancy, current_residue) # creates atom
                     current_residue.atoms.append(atom)
                 else:
@@ -288,8 +300,11 @@ def parse_cif(cif_file):
                 if resname in residue_mapping:
                     current_chain.residues.append(current_residue) # appends the last residue
                 atominfo_block = False 
-                
-    current_protein.set_title(title.title().replace("'",""))
+    
+    if title is not None:        
+        current_protein.set_title(title.title().replace("'",""))
+    else:
+        current_protein.set_title(None)
     return current_protein
 
 

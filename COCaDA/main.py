@@ -117,7 +117,6 @@ def process_file(file_path):
         contacts_list = contacts.contact_detection(parsed_data)
         process_time = timer() - start_time
         return parsed_data, contacts_list, process_time
-
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
