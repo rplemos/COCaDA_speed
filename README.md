@@ -9,7 +9,7 @@
 COCαDA (Contact Optimization by alpha-Carbon Distance Analysis) optimizes the calculation of atomic interactions in proteins, by using a set of fine-tuned Cα distances between every pair of aminoacid residues.
 The code includes a customized parser for both PDB and CIF files, containing functionalities for handling large files, filtering out specific residues and interactions, and calculating geometric properties such as centroid and normal vectors for aromatic residues.
 
-Additionaly, as comparison for demonstrating the efficiency of our method, a Biopython-dependent script is also included (in the folder Biopython), containing the same restrictions and contact definitions.
+Additionaly, as comparison for demonstrating the efficiency of our method, a Biopython-dependent script is also included ([Biopython](Biopython/main_biopython.py)), containing the same restrictions and contact definitions.
 
 The contact types available are:
   - Hydrophobic
@@ -28,6 +28,7 @@ The contact types available are:
 - **Interaction Analysis:** Identifies contacts between specified types of atoms based on predefined conditions.
 - **Aromatic Residue Analysis:** Computes centroids and normal vectors for aromatic residues, to determine aromatic stacking contacts.
 - **Multi-Core Processing:** All analyzes can be run on any combination of cores on the user's computer.
+- **CSV-formatted outputs:** Easy to process and analyze.
 
 ## Installation
 
@@ -83,7 +84,7 @@ The contact types available are:
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Citation
-Still not published.
+LEMOS, Rafael P.; MARIANO, Diego; SILVEIRA, Sabrina A.; MELO-MINARDI, Raquel C. de. COCαDA - Large-Scale Protein Interatomic Contact Cutoff Optimization by Cα Distance Matrices. In: Proceedings of the XVII Brazilian Symposium on Bioinformatics (BSB), 17, p. 59-70, 2024. DOI: https://doi.org/10.5753/bsb.2024.245545.
 
 ## Contact
 For any questions or issues, please contact:
