@@ -42,6 +42,7 @@ def parse_pdb(pdb_file):
     residue names, aromatic residues, and low-quality atoms. The function also assigns a unique
     identifier and title to the protein based on the header information.
     """
+    
     current_protein = Protein()
     current_chain = None
     current_residue = None
@@ -49,7 +50,7 @@ def parse_pdb(pdb_file):
     with open(pdb_file) as f:
         
         current_protein.id = os.path.basename(pdb_file).split(".")[0]
-
+        
         for line in f:
             line = line.strip()
             
@@ -74,14 +75,14 @@ def parse_pdb(pdb_file):
                     continue
                 resname = line[17:20]
                 
-                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]:
-  # alternative names for protonated histidines
+                # alternative names for protonated histidines
+                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]: 
                     resname = "HIS"
-                                    
+                
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping.get(resname)                       
+                resname = residue_mapping.get(resname)                      
 
                 if current_chain is None or current_chain.id != chain_id:  # new chain
                     residues = []
@@ -95,8 +96,8 @@ def parse_pdb(pdb_file):
                     current_chain.residues.append(current_residue)
                 
                 if current_residue.resnum != resnum:
-                    if len(current_residue.atoms) > 1:
-                        current_chain.residues.append(current_residue) 
+                    if len(current_residue.atoms) >= 1:
+                        current_chain.residues.append(current_residue)
                     atoms = []
                     current_residue = Residue(resnum, resname, atoms, current_chain, False, None)
                                                                 
@@ -176,14 +177,16 @@ def parse_cif(cif_file):
         for line in f:
             line = line.strip()
 
-            # if line.startswith("_entry.id"):
-            #     current_protein.id = line[-4:]
+            if line.startswith("_entry.id"):
+                current_protein.id = line[-4:]
 
             # this title block can definitely be simplified, but there are a lot of edge cases to handle
             # current_protein.set_title() is set before returning the whole object
             if line.startswith("_struct.title"):
                 title = line[len("_struct.title"):].strip()
                 if title.startswith(";") and title.endswith(";"):
+                    title = title[1:-1].strip()
+                elif title.startswith("'") and title.endswith("'"):
                     title = title[1:-1].strip()
                 elif title == "":
                     title_block = True
@@ -196,7 +199,7 @@ def parse_cif(cif_file):
                 else:
                     title += line.strip()
                     title_block = False
-                                        
+
             if line.startswith("_atom_site.group_PDB"): # entering ATOM definition block
                 atomsite_block = True
                 line = line.split(".")[1]
@@ -216,7 +219,6 @@ def parse_cif(cif_file):
                 z_index = atom_lines.index("Cartn_z")
                 occupancy_index = atom_lines.index("occupancy")
                 model_index = atom_lines.index("pdbx_PDB_model_num")
-                alt_occupancy_index = atom_lines.index("label_alt_id") # . if occupancy == 1, varies otherwise
                 atom_element_index = atom_lines.index("type_symbol")
                                                                
                 atomsite_block = False
@@ -232,7 +234,8 @@ def parse_cif(cif_file):
                 models.append(int(line[model_index]))
                 curr_model = int(line[model_index])
                 if curr_model != models[0]: # parses only the first model (NMR files)
-                    return current_protein
+                    break
+                    #return current_protein
                 
                 chain_id = line[chain_index]
                 
@@ -241,14 +244,15 @@ def parse_cif(cif_file):
                     continue
                 resname = line[resname_index]
 
-                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]: # alternative names for protonated histidines
+                # alternative names for protonated histidines
+                if resname in ["HID", "HIE", "HSP", "HSD", "HSE"]: 
                     resname = "HIS" 
 
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping.get(resname)
-                
+                resname = residue_mapping[resname]                            
+
                 if current_chain is None or current_chain.id != chain_id:  # new chain
                     residues = []
                     current_chain = Chain(chain_id, residues)
@@ -261,7 +265,7 @@ def parse_cif(cif_file):
                     current_chain.residues.append(current_residue)
                 
                 if current_residue.resnum != resnum: # new residue
-                    if len(current_residue.atoms) > 1:
+                    if len(current_residue.atoms) >= 1:
                         current_chain.residues.append(current_residue) 
                     atoms = []
                     current_residue = Residue(resnum, resname, atoms, current_chain, False, None)
@@ -301,8 +305,8 @@ def parse_cif(cif_file):
                     current_chain.residues.append(current_residue) # appends the last residue
                 atominfo_block = False 
     
-    if title is not None:        
-        current_protein.set_title(title.title().replace("'",""))
+    if title is not None:
+        current_protein.set_title(title.title().replace("'","").replace('"','').replace(",","."))
     else:
         current_protein.set_title(None)
     return current_protein

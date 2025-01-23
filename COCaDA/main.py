@@ -29,6 +29,7 @@ def main():
     if core is not None:  # Set specific core affinity
         Process(os.getpid()).cpu_affinity(core)
         print("Multicore mode selected.")
+                     
         if len(core) == 1: # One specific core
             print(f"Running on core {core[0]}.")
         elif core[-1] - core[0] == len(core) - 1:  # Range
@@ -43,7 +44,7 @@ def main():
             os.makedirs(output)
     else:
         output = None
-        
+    
     process_func = single if core is None else multi
     process_func(file_list, output, core)
 
@@ -110,13 +111,14 @@ def process_file(file_path):
     try:
         parsed_data = parser.parse_pdb(file_path) if file_path.endswith(".pdb") else parser.parse_cif(file_path)
             
-        if parsed_data.true_count() > 25000:  # Skip very large proteins (customizable)
-            print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues")
+        if parsed_data.true_count() > 10000:  # Skip very large proteins (customizable)
+            print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues")  
             return None
 
         contacts_list = contacts.contact_detection(parsed_data)
         process_time = timer() - start_time
         return parsed_data, contacts_list, process_time
+
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
@@ -133,15 +135,26 @@ def process_result(result, output):
     if result:
         protein, contacts_list, process_time = result
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
-
         print(output_data)
+        
         if output:
-            with open(f"{output}/{protein.id}_contacts.txt", "w") as f:
-                f.write(output_data + "\n")
+            output_folder = f"{output}/{protein.id}/"
+            
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
+            
+            with open(f"{output_folder}/{protein.id}_contacts.csv","w") as f:
                 f.write(contacts.show_contacts(contacts_list))
-                
-            with open(f"{output}/list.csv","a") as f:
-                f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)}\n")
+            
+            ### Created for COCaDA-Web ###
+            #
+            # number_contacts = contacts.count_contacts(contacts_list)
+            # number_contacts = ','.join(map(str, number_contacts))
+            #
+            # with open(f"{output_folder}/{protein.id}_info.csv","w") as f:
+            #     f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)},{number_contacts}")
+            # with open(f"{output}/list.csv","a") as f:
+            #     f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)}\n")
 
 
 if __name__ == "__main__":
