@@ -109,9 +109,9 @@ def show_contacts(contacts):
     
     output = []
     
-    output.append("\nChain1,Res1,ResName1,Atom1,Chain2,Res2,ResName2,Atom2,Distance,Type")
-    for entry in contacts:
-        output.append(entry.print_text())
+    output.append("Chain1,Res1,ResName1,Atom1,Chain2,Res2,ResName2,Atom2,Distance,Type")
+    for contact in contacts:
+        output.append(contact.print_text())
         
     return "\n".join(output) # returns as a string to be written directly into the file
 
@@ -133,3 +133,29 @@ def calc_angle(vector1, vector2):
     angle = arccos(dot_product / magnitude_product) # angle in radians   
     
     return degrees(angle)
+
+
+### Created for COCaDA-Web ###
+#
+# def count_contacts(contacts):
+#     """
+#     Formats and returns the number of contacts for each type. Only works with the -o flag.
+
+#     Args:
+#         contacts (list): A list of Contact objects of a given protein.
+
+#     Returns:
+#         list: A list of the number of contacts for each type.
+#     """
+    
+#     category_counts = {}
+#     for contact in contacts:
+#         category = contact.type
+#         if category in ['stacking-other', 'stacking-parallel', 'stacking-perpendicular']:
+#             category = 'aromatic'
+#         category_counts[category] = category_counts.get(category, 0) + 1
+        
+#     expected_keys = ['hydrogen_bond', 'attractive', 'repulsive', 'hydrophobic', 'aromatic', 'salt_bridge', 'disulfide_bond']
+#     values = [category_counts.get(key, 0) for key in expected_keys]
+
+#     return values

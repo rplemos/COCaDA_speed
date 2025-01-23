@@ -200,9 +200,9 @@ class Contact:
             "repulsive":"RE",
             "salt_bridge":"SB",
             "disulfide_bond":"DS",
-            "stacking-other":"SOT",
-            "stacking-parallel":"SPA",
-            "stacking-perpendicular":"SPE"
+            "stacking-other":"AS",
+            "stacking-parallel":"AS", # on v.1 all aromatic stackings will be considered the same
+            "stacking-perpendicular":"AS" # need to reimplement later
         }
         
         all_values = list(self.__dict__.values())
