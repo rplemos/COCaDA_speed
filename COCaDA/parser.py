@@ -67,21 +67,16 @@ def parse_pdb(pdb_file):
                 elif "CHAIN" in line:
                     chains = line.split(":")[1].strip().replace(";","").replace(" ","")
                     entity_chains[current_entity] = chains.split(",")
-
+        
             elif line.startswith("HEADER"):
-                if ("RNA" in line or "DNA" in line): 
-                    current_protein.id = pdb_file.split("/")[-1][:4]
-                    current_protein.title = "DNA/RNA"
-                    break
-                else:
-                    current_protein.id = line[62:]
+                current_protein.id = line[62:]
                 
             elif line.startswith("TITLE"):
                 current_protein.set_title(line[10:])
                 
             elif line.startswith("ATOM"):
                 chain_id = line[21]
-                if chain_id in entity_chains[current_entity]:
+                if entity_chains and chain_id in entity_chains[current_entity]:
                     entity = current_entity
                 resnum = int(line[22:26])
                 # if resnum <= 0:
