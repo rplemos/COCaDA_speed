@@ -13,6 +13,7 @@ from psutil import Process
 import parser
 import argparser
 import contacts
+import classes
 
 def main():
     """
@@ -24,7 +25,12 @@ def main():
     """
     global_time_start = timer()
     
-    file_list, core, output = argparser.cl_parse()
+    file_list, core, output, region, interface = argparser.cl_parse()
+    
+    # Create a context object for shared parameters
+    context = classes.ProcessingContext(core=core, output=output, region=region, interface=interface)
+    
+    print("--------------COCaDA----------------")
     
     if core is not None:  # Set specific core affinity
         Process(os.getpid()).cpu_affinity(core)
@@ -37,67 +43,72 @@ def main():
         else: # List
             print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}.")
     else:
-        print("Running on single mode with no specific core.") 
+        print("Running on single mode with no specific core.")
+
+    if interface:
+        print("Calculating only interface contacts.") 
                
     if output:
+        print(f"Generating outputs in '{output}' folder.")
         if not os.path.exists(output):
             os.makedirs(output)
     else:
         output = None
+    print("------------------------------------\n")
     
     process_func = single if core is None else multi
-    process_func(file_list, output, core)
+    process_func(file_list, context)
 
     print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
 
 
-def single(file_list, output, core=None):
+def single(file_list, context):
     """
     Processes a list of files in single-core mode.
 
     Args:
         file_list (list): List of file paths to process.
-        output (str): The directory where output files will be saved (or None if no output).
+        context (ProcessingContext): Context object containing parameters such as core, output, and region.
 
-    This function processes each file in the list sequentially, detects contacts, and outputs
-    the results to the console or to a file, depending on the 'output' flag.
+    This function processes each file in the list sequentially, detects contacts, and outputs the results to the console or to a file, depending on the 'output' flag.
     """
     for file in file_list:
         try:
-            result = process_file(file)
-            process_result(result, output)
+            result = process_file(file, context)
+            process_result(result, context.output)
         except Exception as e:
             print(f"Error: {e}")
 
 
-def multi(file_list, output,core):
+def multi(file_list, context):
     """
     Processes a list of files in multi-core mode using parallel processing.
 
     Args:
         file_list (list): List of file paths to process.
-        output (str): The directory where output files will be saved (or None if no output).
+        context (ProcessingContext): Context object containing parameters such as core, output, and region.
 
     This function processes the files in the list using a process pool with the specified number of cores.
     """
 
-    with ProcessPoolExecutor(max_workers=len(core)) as executor:
+    with ProcessPoolExecutor(max_workers=len(context.core)) as executor:
 
-        futures = {executor.submit(process_file, file): file for file in file_list}
+        futures = {executor.submit(process_file, file, context): file for file in file_list}
         for future in as_completed(futures):
             try:
-                process_result(future.result(), output)
+                process_result(future.result(), context.output)
             except Exception as e:
                 print(f"Error: {e}")
             finally:
                 del futures[future]  # Clean memory
 
-def process_file(file_path):
+def process_file(file_path, context):
     """
     Processes a single file for contact detection.
 
     Args:
         file_path (str): Path to the file to be processed.
+        context (ProcessingContext): Context object containing parameters such as core, output, and region.
 
     Returns:
         tuple: A tuple containing the processed Protein object, the list of detected contacts, and the processing time.
@@ -115,9 +126,9 @@ def process_file(file_path):
             print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues")  
             return None
 
-        contacts_list = contacts.contact_detection(parsed_data)
+        contacts_list, interface_res = contacts.contact_detection(parsed_data, context.region, context.interface)
         process_time = timer() - start_time
-        return parsed_data, contacts_list, process_time
+        return parsed_data, contacts_list, process_time, interface_res
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
@@ -133,7 +144,7 @@ def process_result(result, output):
         output (str): The directory where output files will be saved.
     """
     if result:
-        protein, contacts_list, process_time = result
+        protein, contacts_list, process_time, interface_res = result
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
         print(output_data)
         

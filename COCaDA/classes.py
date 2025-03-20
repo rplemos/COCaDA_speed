@@ -5,6 +5,13 @@ Date: 12/08/2024
 License: MIT License
 """
 
+class ProcessingContext:
+    def __init__(self, core=None, output=None, region=False, interface=False):
+        self.core = core
+        self.output = output
+        self.region = region
+        self.interface = interface
+
 class Protein:
     """
     Represents a protein structure, including its title, ID, and chains.
@@ -127,9 +134,10 @@ class Atom:
         z (float): The z-coordinate of the atom.
         occupancy (float): The occupancy value of the atom.
         residue (Residue): The residue to which the atom belongs.
+        entity (int): The entity in which the atom is located.
     """
     
-    def __init__(self, atomname, x, y, z, occupancy, residue):
+    def __init__(self, atomname, x, y, z, occupancy, residue, entity):
         """
         Initializes a new Atom instance.
         """
@@ -140,6 +148,7 @@ class Atom:
         self.z = z
         self.occupancy = occupancy
         self.residue = residue
+        self.entity = entity
 
 
 class Contact: 
