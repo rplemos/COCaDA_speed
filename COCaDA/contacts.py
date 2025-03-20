@@ -14,7 +14,7 @@ from distances import distances
 import conditions
 
 
-def contact_detection(protein, region, interface):
+def contact_detection(protein, region, interface, custom_distances, epsilon):
     """
     Detects contacts between atoms in a given protein.
 
@@ -28,7 +28,15 @@ def contact_detection(protein, region, interface):
     residues = list(protein.get_residues())
     contacts = []
     interface_res = set()
-
+    max_ca_distance = 20.47 # 0.01 higher than the Arg-Arg pair
+    
+    categories = custom_distances if custom_distances else conditions.categories
+    if epsilon > 0:
+        max_ca_distance += epsilon
+        updated_distances = {key: value + epsilon for key, value in distances.items()}
+    else:
+        updated_distances = distances
+        
     for i, residue1 in enumerate(residues[1:]):
         for _, residue2 in enumerate(residues[i+1:], start=i+1):
             
@@ -44,11 +52,11 @@ def contact_detection(protein, region, interface):
                 distance_ca = dist((ca1.x, ca1.y, ca1.z), (ca2.x, ca2.y, ca2.z))
                 
                 # filter distant residues (static value then specific values)
-                if distance_ca > 20.4:
+                if distance_ca > max_ca_distance:
                     continue
                 else:
                     key = ''.join(sorted((residue1.resname, residue2.resname)))
-                    if distance_ca > distances[key]:
+                    if distance_ca > (updated_distances[key] + epsilon):
                         continue
 
             else:
@@ -91,7 +99,7 @@ def contact_detection(protein, region, interface):
                         
                         if distance <= 6: # max distance for contacts
 
-                            for contact_type, distance_range in conditions.categories.items():
+                            for contact_type, distance_range in categories.items():
 
                                 if contact_type == 'hydrogen_bond' and (abs(residue2.resnum - residue1.resnum) <= 3): # skips alpha-helix for h-bonds
                                     continue

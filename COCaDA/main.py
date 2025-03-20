@@ -6,6 +6,7 @@ License: MIT License
 """
 
 import os
+import json
 from timeit import default_timer as timer
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from psutil import Process
@@ -25,12 +26,12 @@ def main():
     """
     global_time_start = timer()
     
-    file_list, core, output, region, interface = argparser.cl_parse()
-    
-    # Create a context object for shared parameters
-    context = classes.ProcessingContext(core=core, output=output, region=region, interface=interface)
+    file_list, core, output, region, interface, custom_distances = argparser.cl_parse()
     
     print("--------------COCaDA----------------")
+    
+    # Create a context object for shared parameters
+    context = classes.ProcessingContext(core=core, output=output, region=region, interface=interface, custom_distances=custom_distances)
     
     if core is not None:  # Set specific core affinity
         Process(os.getpid()).cpu_affinity(core)
@@ -54,11 +55,26 @@ def main():
             os.makedirs(output)
     else:
         output = None
-    print("------------------------------------\n")
+        
+    if custom_distances:
+        print("Using custom distances provided by the user.")
+        with open("./contact_distances.json","r") as f:
+            loaded_distances = json.load(f)
+        try:
+            validated_distances = validate_categories({key: tuple(value) for key, value in loaded_distances.items()})
+            max_value = max(y for x in validated_distances.values() for y in x)
+            if max_value > 6:
+                context.epsilon = max_value - 6
+        except ValueError as e:
+            print(e)  
+            exit(1)
+            
+        context.custom_distances = validated_distances
     
     process_func = single if core is None else multi
     process_func(file_list, context)
-
+    
+    print("------------------------------------\n")
     print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
 
 
@@ -126,7 +142,7 @@ def process_file(file_path, context):
             print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues")  
             return None
 
-        contacts_list, interface_res = contacts.contact_detection(parsed_data, context.region, context.interface)
+        contacts_list, interface_res = contacts.contact_detection(parsed_data, context.region, context.interface, context.custom_distances, context.epsilon)
         process_time = timer() - start_time
         return parsed_data, contacts_list, process_time, interface_res
 
@@ -167,6 +183,14 @@ def process_result(result, output):
             # with open(f"{output}/list.csv","a") as f:
             #     f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)}\n")
 
+
+def validate_categories(categories):
+    for key, (min_val, max_val) in categories.items():
+        if min_val < 0 or max_val < 0:
+            raise ValueError(f"Invalid values for '{key}': values must be positive.")
+        if min_val >= max_val:
+            raise ValueError(f"Invalid range for '{key}': min ({min_val}) must be less than max ({max_val}).")
+    return categories  # Return the validated dictionary 
 
 if __name__ == "__main__":
     main()
