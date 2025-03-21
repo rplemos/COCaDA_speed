@@ -221,8 +221,12 @@ def parse_cif(cif_file):
                 atomname_index = atom_lines.index("label_atom_id")
                 resname_index = atom_lines.index("label_comp_id")
                 chain_index = atom_lines.index("label_asym_id")
-                #resnum_index = atom_lines.index("label_seq_id")
-                resnum_index = atom_lines.index("auth_seq_id")
+                
+                if "auth_seq_id" in atom_lines:
+                    resnum_index = atom_lines.index("auth_seq_id")
+                else:
+                    resnum_index = atom_lines.index("label_seq_id")
+                
                 x_index = atom_lines.index("Cartn_x")
                 y_index = atom_lines.index("Cartn_y")
                 z_index = atom_lines.index("Cartn_z")
@@ -304,13 +308,14 @@ def parse_cif(cif_file):
                     
                     # if ring has only one conformation and the residue is complete (all atoms populated)
                     if all_atoms_have_occupancy_one and len(current_residue.atoms) == stacking[current_residue.resname][0]:
-                        ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms if atom.atomname in stacking[current_residue.resname]])                        
-                        centroid_atom = centroid(current_residue, ring_atoms, entity)
-                        current_residue.atoms.append(centroid_atom)
-                        current_residue.ring = True # flags the aromatic residue
+                        ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms if atom.atomname in stacking[current_residue.resname]])
+                        if ring_atoms.any():
+                            centroid_atom = centroid(current_residue, ring_atoms, entity)
+                            current_residue.atoms.append(centroid_atom)
+                            current_residue.ring = True # flags the aromatic residue
 
-                        normal_vector = calc_normal_vector(ring_atoms)
-                        current_residue.normal_vector = normal_vector
+                            normal_vector = calc_normal_vector(ring_atoms)
+                            current_residue.normal_vector = normal_vector
 
             elif atominfo_block and line == "#":
                 if resname in residue_mapping:
