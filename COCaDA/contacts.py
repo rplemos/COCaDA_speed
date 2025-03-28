@@ -70,7 +70,9 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
                 
                 distance = dist((ring1.x, ring1.y, ring1.z), (ring2.x, ring2.y, ring2.z))
                 angle = calc_angle(residue1.normal_vector, residue2.normal_vector)
-                if distance >= 2 and distance <= 5: # within aromatic stacking limits
+                
+                aromatic_range = categories['aromatic']
+                if aromatic_range[0] <= distance <= aromatic_range[1]:
                     if (160 <= angle < 180) or (0 <= angle < 20):
                         stack_type = "-parallel"
                     elif (80 <= angle < 100):
