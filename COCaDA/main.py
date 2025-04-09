@@ -45,7 +45,7 @@ def main():
             print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}")
         else: # List
             print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}")
-        
+
     else:
         print("Running on single mode with no specific core.")
 
@@ -74,8 +74,7 @@ def main():
             
         context.custom_distances = validated_distances
 
-    process_func = single if core is None else multi_process_files
-    #process_func = single if core is None else multi
+    process_func = single if core is None else multi_batch
     process_func(file_list, context)
     
     print("\n------------------------------------\n")
@@ -100,32 +99,16 @@ def single(file_list, context):
             print(f"Error: {e}")
 
 
-def multi(file_list, context):
+def multi_batch(file_list, context):
     """
-    Processes a list of files in multi-core mode using parallel processing.
+    Distributes the processing of files across multiple cores in batches.
 
     Args:
         file_list (list): List of file paths to process.
         context (ProcessingContext): Context object containing parameters such as core, output, and region.
-
-    This function processes the files in the list using a process pool with the specified number of cores.
     """
-
-    with ProcessPoolExecutor(max_workers=len(context.core)) as executor:
-
-        futures = {executor.submit(process_file, file, context): file for file in file_list}
-        for future in as_completed(futures):
-            try:
-                process_result(future.result(), context.output)
-            except Exception as e:
-                print(f"Error: {e}")
-            finally:
-                del futures[future]  # Clean memory
-       
-                
-def multi_process_files(file_list, context):
     num_cores = len(context.core)
-    batch_size = max(1, len(file_list) // num_cores)  # Calculate reasonable batch size
+    batch_size = max(1, len(file_list) // num_cores)
     print(f"Number of files: {len(file_list)} | Batch size: {batch_size}\n")
 
     with ProcessPoolExecutor(max_workers=num_cores) as executor:
@@ -138,23 +121,38 @@ def multi_process_files(file_list, context):
             except Exception as e:
                 print(f"Error processing batch: {e}")
             finally:
-                del futures[future]  # Clean up futures
+                del futures[future] 
 
 
 def process_batch(batch, context):
-    #batch_start = timer()
+    """
+    Processes a single batch of files sequentially.
+
+    Args:
+        batch (list): List of file paths in the batch.
+        context (ProcessingContext): Context object containing parameters such as core, output, and region.
+    """
     for file_path in batch:
         result = process_file(file_path, context)
         if result:
             process_result(result, context.output)
-    
-    #print(f"Batch completed: {batch}, Time: {timer() - batch_start:.3f}s")
 
 
 def batch_generator(file_list, batch_size):
+    """
+    Generates batches from the file list.
+
+    Args:
+        file_list (list): List of file paths to split into batches.
+        batch_size (int): Maximum number of files per batch.
+
+    Yields:
+        list of str: Next batch of file paths.
+    """
     it = iter(file_list)
     while batch := list(islice(it, batch_size)):
         yield batch
+
 
 def process_file(file_path, context):
     """
@@ -168,10 +166,10 @@ def process_file(file_path, context):
         tuple: A tuple containing the processed Protein object, the list of detected contacts, and the processing time.
         None: If the file cannot be processed or an error occurs.
 
-    This function parses the PDB or mmCIF file, detects contacts, and returns the results. 
-    If an error occurs during processing, it logs the error and returns None.
+    This function parses the PDB or mmCIF file, detects contacts, and returns the results. If an error occurs during processing, it logs the error and returns None.
     """
     start_time = timer()
+
     try:
         parsed_data = parser.parse_pdb(file_path) if file_path.endswith(".pdb") else parser.parse_cif(file_path)
 
@@ -213,16 +211,6 @@ def process_result(result, output):
             with open(f"{output_folder}/{protein.id}_contacts.csv","w") as f:
                 f.write(contacts.show_contacts(contacts_list))
             
-            ### Created for COCaDA-Web ###
-            #
-            # number_contacts = contacts.count_contacts(contacts_list)
-            # number_contacts = ','.join(map(str, number_contacts))
-            #
-            # with open(f"{output_folder}/{protein.id}_info.csv","w") as f:
-            #     f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)},{number_contacts}")
-            # with open(f"{output}/list.csv","a") as f:
-            #     f.write(f"{protein.id},{protein.title},{protein.true_count()},{len(contacts_list)}\n")
-            
             ### Created for COCaDA_speed ###
             # with open(f"{output_folder}/{protein.id}_interface.csv", "w") as f:
             #     for res in interface_res:
@@ -236,6 +224,7 @@ def validate_categories(categories):
         if min_val >= max_val:
             raise ValueError(f"Invalid range for '{key}': min ({min_val}) must be less than max ({max_val}).")
     return categories
+
 
 if __name__ == "__main__":
     main()
