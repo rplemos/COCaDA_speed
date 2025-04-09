@@ -110,7 +110,7 @@ def parse_pdb(pdb_file):
                     current_residue = Residue(resnum, resname, atoms, current_chain, False, None)
                                                                 
                 atomname = line[12:16].replace(" ", "")
-                if atomname == "OXT": # OXT is the C-terminal Oxygen atom
+                if atomname == "OXT" or atomname.startswith("H"): # OXT is the C-terminal Oxygen atom
                     continue
                 
                 x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
@@ -132,14 +132,15 @@ def parse_pdb(pdb_file):
                     # if ring has only one conformation and the residue is complete (all atoms populated)
                     if all_atoms_have_occupancy_one and len(current_residue.atoms) == stacking[current_residue.resname][0]:
                         ring_atoms = array([[atom.x, atom.y, atom.z] for atom in current_residue.atoms if atom.atomname in stacking[current_residue.resname]])
+                        
+                        if ring_atoms.any():
+                            centroid_atom = centroid(current_residue, ring_atoms, entity)
+                            current_residue.atoms.append(centroid_atom)
+                            current_residue.ring = True # flags the aromatic residue
 
-                        centroid_atom = centroid(current_residue, ring_atoms, entity)
-                        current_residue.atoms.append(centroid_atom)
-                        current_residue.ring = True
-
-                        normal_vector = calc_normal_vector(ring_atoms)
-                        current_residue.normal_vector = normal_vector
-
+                            normal_vector = calc_normal_vector(ring_atoms)
+                            current_residue.normal_vector = normal_vector
+                            
             elif line.startswith("END"):  
                 # Handling cases where there is no ID
                 if current_protein.id is None:
@@ -285,7 +286,7 @@ def parse_cif(cif_file):
                     current_residue = Residue(resnum, resname, atoms, current_chain, False, None)
                                                                 
                 atomname = line[atomname_index]
-                if atomname == "OXT": # OXT is the C-terminal Oxygen atom
+                if atomname == "OXT"  or atomname.startswith("H"): # OXT is the C-terminal Oxygen atom
                     continue
                     
                 x, y, z = float(line[x_index]), float(line[y_index]), float(line[z_index])
