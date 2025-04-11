@@ -65,6 +65,7 @@ def parse_pdb(pdb_file):
                 if "MOL_ID" in line:
                     current_entity = line[-2]
                 elif "CHAIN:" in line:
+                elif "CHAIN:" in line:
                     chains = line.split(":")[1].strip().replace(";","").replace(" ","")
                     entity_chains[current_entity] = chains.split(",")
                     
@@ -76,6 +77,13 @@ def parse_pdb(pdb_file):
                 
             elif line.startswith("ATOM"):
                 chain_id = line[21]
+                
+                if entity_chains:
+                    for key, chains in entity_chains.items():
+                        if chain_id in chains:
+                            entity = key
+                            break
+                        
                 
                 if entity_chains:
                     for key, chains in entity_chains.items():
