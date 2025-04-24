@@ -12,10 +12,10 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from psutil import Process
 from itertools import islice
 
-import src.parser
-import src.argparser
-import src.contacts
-import src.classes
+import src.parser as parser
+import src.argparser as argparser
+import src.contacts as contacts
+import src.classes as classes
 
 
 def main():
@@ -180,9 +180,9 @@ def process_file(file_path, context):
                     f.write(f"{parsed_data.id},{parsed_data.title},{parsed_data.true_count()},x\n")
             return None
 
-        contacts_list, interface_res = contacts.contact_detection(parsed_data, context.region, context.interface, context.custom_distances, context.epsilon)
+        contacts_list, interface_res, total_strength = contacts.contact_detection(parsed_data, context.region, context.interface, context.custom_distances, context.epsilon)
         process_time = timer() - start_time
-        return parsed_data, contacts_list, process_time, interface_res
+        return parsed_data, contacts_list, process_time, interface_res, total_strength
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
@@ -198,7 +198,7 @@ def process_result(result, output):
         output (str): The directory where output files will be saved.
     """
     if result:
-        protein, contacts_list, process_time, interface_res = result
+        protein, contacts_list, process_time, interface_res, total_strength = result
         
         # chain_ids = [chain.id for chain in protein.get_chains()]
         # chains = ":".join(chain_ids)
@@ -206,6 +206,7 @@ def process_result(result, output):
         
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
         print(output_data)
+        print(f"Total contact strength: {total_strength:.2f}")
         
         if output:
             output_folder = f"{output}/{protein.id}/"

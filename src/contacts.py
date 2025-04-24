@@ -128,9 +128,8 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
                                         interface_res.add(f"{residue1.chain.id},{residue1.resnum},{residue1.resname}")
                                         
                                         total_strength += contact_strength[contact_type]
-
-    print(f"{protein.id},{round(total_strength)}")                                    
-    return contacts, interface_res
+                                 
+    return contacts, interface_res, total_strength
 
 
 def show_contacts(contacts):
