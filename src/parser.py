@@ -5,7 +5,7 @@ Date: 12/08/2024
 License: MIT License
 """
 
-from classes import Protein, Chain, Residue, Atom
+from src.classes import Protein, Chain, Residue, Atom
 
 import os
 from numpy import mean, array
@@ -64,7 +64,6 @@ def parse_pdb(pdb_file):
             elif line.startswith("COMPND"):
                 if "MOL_ID" in line:
                     current_entity = line[-2]
-                elif "CHAIN:" in line:
                 elif "CHAIN:" in line:
                     chains = line.split(":")[1].strip().replace(";","").replace(" ","")
                     entity_chains[current_entity] = chains.split(",")
