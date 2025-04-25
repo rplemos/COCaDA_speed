@@ -37,8 +37,8 @@ contact_conditions = {
     'attractive': lambda name1, name2: (contact_types[name1][2] == 1 and contact_types[name2][3] == 1) or (contact_types[name1][3] == 1 and contact_types[name2][2] == 1),
     'aromatic': lambda name1, name2: (contact_types[name1][1] == 2 and contact_types[name2][1] == 2), # aromatics are checked elsewhere
     'polar-apolar': lambda name1, name2: (
-    (any(contact_types[name1][i] == 1 for i in [2, 3, 4, 5]) and contact_types[name2][0] == 1) or
-    (any(contact_types[name2][i] == 1 for i in [2, 3, 4, 5]) and contact_types[name1][0] == 1)),
+    (any(contact_types[name1][i] == 1 for i in [4, 5]) and contact_types[name2][0] == 1) or
+    (any(contact_types[name2][i] == 1 for i in [4, 5]) and contact_types[name1][0] == 1)),
     'pos-apolar': lambda name1, name2: ((contact_types[name1][0] == 1 and contact_types[name2][2] == 1) or (contact_types[name1][2] == 1 and contact_types[name2][0] == 1)),
     'neg-apolar': lambda name1, name2: ((contact_types[name1][0] == 1 and contact_types[name2][3] == 1) or (contact_types[name1][3] == 1 and contact_types[name2][0] == 1)),
 }
