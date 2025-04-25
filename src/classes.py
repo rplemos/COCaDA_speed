@@ -223,7 +223,10 @@ class Contact:
             "disulfide_bond":"DS",
             "stacking-other":"AS",
             "stacking-parallel":"AS", # on v.1 all aromatic stackings will be considered the same
-            "stacking-perpendicular":"AS" # need to reimplement later
+            "stacking-perpendicular":"AS", # need to reimplement later
+            "polar-apolar":"PA",
+            "pos-apolar":"PosA",
+            "neg-apolar":"NegA"
         }
         
         all_values = list(self.__dict__.values())
