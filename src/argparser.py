@@ -35,6 +35,7 @@ def cl_parse():
         parser.add_argument('-o', '--output', required=False, nargs='?', const='./outputs', help='Outputs the results to files in the given folder. Default is ./outputs.')
         parser.add_argument('-r', '--region', required=False, nargs='?', help='Define only a region of residues to be analyzed. Selections can be defined based on the following: -r X-Y = range of residues from X to Y. -r X,Y,Z... = specific multiple residues.')
         parser.add_argument('-i', '--interface', required=False, action='store_true', help='Calculate only interface contacts.')
+        #parser.add_argument('-i', '--interface', required=False, nargs='?', const=0, help='Calculate only interface contacts.')
         parser.add_argument('-d', '--distances', required=False, action='store_true', help='Processes custom contact distances based on the "contact_distances.txt" file.')
 
         args = parser.parse_args()
@@ -59,6 +60,7 @@ def cl_parse():
             region = validate_region(region_values)
         else:
             region = None
+            
         
     except ArgumentError as e:
         print(f"Argument Error: {str(e)}")

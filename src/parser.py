@@ -82,13 +82,6 @@ def parse_pdb(pdb_file):
                         if chain_id in chains:
                             entity = key
                             break
-                        
-                
-                if entity_chains:
-                    for key, chains in entity_chains.items():
-                        if chain_id in chains:
-                            entity = key
-                            break
                 
                 resnum = int(line[22:26])
                 # if resnum <= 0:

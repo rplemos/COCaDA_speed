@@ -22,9 +22,9 @@ categories = {
     'attractive': (3.9, 6),
     'disulfide_bond': (0, 2.8),
     'aromatic': (2, 5),
-    'polar-apolar': (0, 4),
-    'pos-apolar': (0, 4),
-    'neg-apolar': (0, 4),
+    'polar-apolar': (0, 5.5),
+    'pos-apolar': (0, 5.5),
+    'neg-apolar': (0, 5.5),
 }
 
 

@@ -66,6 +66,10 @@ def contact_detection(protein, context):
     else:
         updated_distances = distances
         
+    # if interface != 0:
+    #     chains = interface.split(":")
+    #     print(chains)
+        
     for i, residue1 in enumerate(residues[1:]):
         for _, residue2 in enumerate(residues[i+1:], start=i+1):
             
@@ -134,8 +138,7 @@ def contact_detection(protein, context):
 
                                 if contact_type == 'hydrogen_bond' and (abs(residue2.resnum - residue1.resnum) <= 3): # skips alpha-helix for h-bonds
                                     continue
-                                
-                                if contact_type in ['polar-apolar', 'pos-apolar', 'neg-apolar'] and not interface:
+                                elif contact_type in ['polar-apolar', 'pos-apolar', 'neg-apolar'] and not interface:
                                     continue
                                 
                                 if distance_range[0] <= distance <= distance_range[1]: # fits the range
