@@ -77,12 +77,15 @@ def parse_pdb(pdb_file):
             elif line.startswith("ATOM"):
                 chain_id = line[21]
                 
-                if entity_chains:
-                    for key, chains in entity_chains.items():
-                        if chain_id in chains:
-                            entity = key
-                            break
+                # if entity_chains:
+                #     for key, chains in entity_chains.items():
+                #         if chain_id in chains:
+                #             entity = key
+                #             break
                 
+                # DESCOMENTAR SÓ QUANDO FOR USAR O DATASET MODIFICADO DO PRODIGY (e comentar o 'if entity_chains' acima)
+                entity = chain_id
+
                 resnum = int(line[22:26])
                 # if resnum <= 0:
                 #     continue
@@ -95,7 +98,7 @@ def parse_pdb(pdb_file):
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping.get(resname)                      
+                resname = residue_mapping.get(resname)                  
 
                 if current_chain is None or current_chain.id != chain_id:  # new chain
                     residues = []
@@ -115,7 +118,10 @@ def parse_pdb(pdb_file):
                     current_residue = Residue(resnum, resname, atoms, current_chain, False, None)
                                                                 
                 atomname = line[12:16].replace(" ", "")
-                if atomname == "OXT" or atomname.startswith("H"): # OXT is the C-terminal Oxygen atom
+                if atomname == "OXT": # OXT is the C-terminal Oxygen atom
+                    current_chain.residues.append(current_residue)
+                    continue
+                elif atomname.startswith("H"):
                     continue
                 
                 x, y, z = float(line[30:38]), float(line[38:46]), float(line[46:54])
@@ -152,7 +158,7 @@ def parse_pdb(pdb_file):
                     id = str(pdb_file).split("/")[-1]
                     id = id.split(".")[0]
                     current_protein.id = id
-                    
+    
     return current_protein
 
 

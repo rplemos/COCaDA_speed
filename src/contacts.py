@@ -57,8 +57,29 @@ def contact_detection(protein, context):
         'pos-apolar': 0,
         'neg-apolar': 0
     }
-
     
+    residue_types = {
+        'polar': ['C', 'H', 'N', 'Q', 'S', 'T', 'Y', 'W'],
+        'apolar': ['A', 'F', 'G', 'I', 'V', 'M', 'P', 'L'],
+        'charged': ['E', 'D', 'K', 'R']
+    }
+    
+    residue_types_ic = {
+        'polar': ['N', 'Q', 'S', 'T'],
+        'apolar': ['A', 'C', 'G', 'F', 'I', 'M', 'L', 'P', 'W', 'V', 'Y'],
+        'charged': ['E', 'D', 'H', 'K', 'R']
+    }
+    
+    prodigy_count = {
+        'charged-charged':0, 
+        'charged-polar':0, 
+        'charged-apolar':0,
+        'polar-polar':0, 
+        'polar-apolar':0,
+        'apolar-apolar':0
+    }
+    prodigy = set()
+
     categories = custom_distances if custom_distances else conditions.categories
     if epsilon > 0:
         max_ca_distance += epsilon
@@ -78,21 +99,20 @@ def contact_detection(protein, context):
             
             if region and (residue1.resnum not in region or residue2.resnum not in region):
                 continue
-            if len(residue1.atoms) > 1 and len(residue2.atoms) > 1:
-                ca1, ca2 = residue1.atoms[1], residue2.atoms[1] # alpha carbons
+            # if len(residue1.atoms) > 1 and len(residue2.atoms) > 1:
+            #     ca1, ca2 = residue1.atoms[1], residue2.atoms[1] # alpha carbons
 
-                distance_ca = dist((ca1.x, ca1.y, ca1.z), (ca2.x, ca2.y, ca2.z))
+            #     distance_ca = dist((ca1.x, ca1.y, ca1.z), (ca2.x, ca2.y, ca2.z))
                 
-                # filter distant residues (static value then specific values)
-                if distance_ca > max_ca_distance:
-                    continue
-                else:
-                    key = ''.join(sorted((residue1.resname, residue2.resname)))
-                    if distance_ca > (updated_distances[key] + epsilon):
-                        continue
-
-            else:
-                continue              
+            #     # filter distant residues (static value then specific values)
+            #     if distance_ca > max_ca_distance:
+            #         continue
+            #     else:
+            #         key = ''.join(sorted((residue1.resname, residue2.resname)))
+            #         if distance_ca > (updated_distances[key] + epsilon):
+            #             continue
+            # else:
+            #     continue              
             
             # CHECKING FOR AROMATIC STACKINGS
             if residue1.ring and residue2.ring:
@@ -132,7 +152,7 @@ def contact_detection(protein, context):
                     if name1 in conditions.contact_types and name2 in conditions.contact_types: # excludes the RNG atom and any different other
                         
                         distance = dist((atom1.x, atom1.y, atom1.z), (atom2.x, atom2.y, atom2.z))
-                        if distance <= 6: # max distance for contacts
+                        if distance <= (6 + epsilon): # max distance for contacts
 
                             for contact_type, distance_range in categories.items():
 
@@ -152,13 +172,44 @@ def contact_detection(protein, context):
                                         
                                         count_contacts[contact_type][1] += 1
                                         
-                                        # if contact_type in ['polar-apolar', 'pos-apolar', 'neg-apolar']:
-                                        #     print(protein.id, residue1.chain.id, residue1.resnum, residue1.resname, atom1.atomname, 
-                                        #                 protein.id, residue2.chain.id, residue2.resnum, residue2.resname, atom2.atomname, 
-                                        #                 float(f"{distance:.2f}"), contact_type)
-                                        
                                         if interface: 
                                             total_strength += contact_strength[contact_type]
+                        
+                        # PRODIGY BLOCK
+                        res1 = f"{residue1.chain.id}:{residue1.resnum}{residue1.resname}"
+                        res2 = f"{residue2.chain.id}:{residue2.resnum}{residue2.resname}"
+                        
+                        if distance <= 5.5 and (res1, res2) not in prodigy:
+                            # residue_group = next((k for k, v in residue_types_ic.items() if residue1.resname in v), None)
+                            # print(residue1.resname, residue_group)
+                            # print(res1, res2)
+                            
+                            if (residue1.resname in residue_types_ic['charged'] and residue2.resname in residue_types_ic['apolar']) or \
+                            (residue1.resname in residue_types_ic['apolar'] and residue2.resname in residue_types_ic['charged']):
+                                prodigy_count['charged-apolar'] += 1
+
+                            elif (residue1.resname in residue_types_ic['polar'] and residue2.resname in residue_types_ic['apolar']) or \
+                                (residue1.resname in residue_types_ic['apolar'] and residue2.resname in residue_types_ic['polar']):
+                                prodigy_count['polar-apolar'] += 1
+
+                            elif residue1.resname in residue_types_ic['charged'] and residue2.resname in residue_types_ic['charged']:
+                                prodigy_count['charged-charged'] += 1
+
+                            elif (residue1.resname in residue_types_ic['charged'] and residue2.resname in residue_types_ic['polar']) or \
+                                (residue1.resname in residue_types_ic['polar'] and residue2.resname in residue_types_ic['charged']):
+                                prodigy_count['charged-polar'] += 1
+
+                            elif residue1.resname in residue_types_ic['polar'] and residue2.resname in residue_types_ic['polar']:
+                                prodigy_count['polar-polar'] += 1
+
+                            elif residue1.resname in residue_types_ic['apolar'] and residue2.resname in residue_types_ic['apolar']:
+                                prodigy_count['apolar-apolar'] += 1
+                            prodigy.add((res1, res2))
+
+    values = prodigy_count.values()
+    #print("id, charged-apolar, polar-apolar, charged-charged, charged-polar, polar-polar, apolar-apolar")
+    print(f"{protein.id},"+",".join(str(v) for v in values))
+                    
     if total_strength == 0:
         total_strength = None
 
