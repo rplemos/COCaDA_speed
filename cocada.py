@@ -8,8 +8,6 @@ License: MIT License
 import os
 import json
 from timeit import default_timer as timer
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from psutil import Process
 from itertools import islice
 
 import src.parser as parser
@@ -34,18 +32,9 @@ def main():
     
     # context object for shared parameters
     context = classes.ProcessingContext(core=core, output=output, region=region, interface=interface, custom_distances=custom_distances)
-    
-    if core is not None:  # Set specific core affinity
-        Process(os.getpid()).cpu_affinity(core)
-        print("Multicore mode selected")
-                     
-        if len(core) == 1: # One specific core
-            print(f"Running on core {core[0]}.")
-        elif core[-1] - core[0] == len(core) - 1:  # Range
-            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}")
-        else: # List
-            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}")
 
+    if core is not None:  # Set specific core affinity
+        print("Multicore mode selected.")
     else:
         print("Running on single mode with no specific core.")
 
@@ -74,6 +63,7 @@ def main():
             
         context.custom_distances = validated_distances
 
+    print()
     process_func = single if core is None else multi_batch
     process_func(file_list, context)
     
@@ -94,7 +84,7 @@ def single(file_list, context):
     for file in file_list:
         try:
             result = process_file(file, context)
-            process_result(result, context.output)
+            process_result(result, context)
         except Exception as e:
             print(f"Error: {e}")
 
@@ -107,21 +97,39 @@ def multi_batch(file_list, context):
         file_list (list): List of file paths to process.
         context (ProcessingContext): Context object containing parameters such as core, output, and region.
     """
-    num_cores = len(context.core)
-    batch_size = max(1, len(file_list) // num_cores)
-    print(f"Number of files: {len(file_list)} | Batch size: {batch_size}\n")
+    core = context.core
 
-    with ProcessPoolExecutor(max_workers=num_cores) as executor:
-        futures = {executor.submit(process_batch, batch, context): batch
-                   for batch in batch_generator(file_list, batch_size)}
+    try:
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+        from psutil import Process
+        
+        Process(os.getpid()).cpu_affinity(core)             
+        if len(core) == 1: # One specific core
+            print(f"Running on core {core[0]}.")
+        elif core[-1] - core[0] == len(core) - 1:  # Range
+            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}")
+        else: # List
+            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}")
+         
+        num_cores = len(core)
+        batch_size = max(1, len(file_list) // num_cores)
+        print(f"Number of files: {len(file_list)} | Batch size: {batch_size} files per core")
+        print()
+        
+        with ProcessPoolExecutor(max_workers=num_cores) as executor:
+            futures = {executor.submit(process_batch, batch, context): batch
+                    for batch in batch_generator(file_list, batch_size)}
 
-        for future in as_completed(futures):  # Wait for all batches to complete
-            try:
-                future.result()  # Process results from batch
-            except Exception as e:
-                print(f"Error processing batch: {e}")
-            finally:
-                del futures[future] 
+            for future in as_completed(futures):  # Wait for all batches to complete
+                try:
+                    future.result()  # Process results from batch
+                except Exception as e:
+                    print(f"Error processing batch: {e}")
+                finally:
+                    del futures[future] 
+    except ImportError:
+        print("Error.")
+        exit(1)
 
 
 def process_batch(batch, context):
@@ -135,7 +143,7 @@ def process_batch(batch, context):
     for file_path in batch:
         result = process_file(file_path, context)
         if result:
-            process_result(result, context.output)
+            process_result(result, context)
 
 
 def batch_generator(file_list, batch_size):
@@ -174,22 +182,22 @@ def process_file(file_path, context):
         parsed_data = parser.parse_pdb(file_path) if file_path.endswith(".pdb") else parser.parse_cif(file_path)
 
         if parsed_data.true_count() > 10000:  # Skip very large proteins (customizable)
-            print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues") 
+            print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues\n") 
             if context.output:
                 with open(f"{context.output}/big.csv", "a") as f:
                     f.write(f"{parsed_data.id},{parsed_data.title},{parsed_data.true_count()},x\n")
             return None
 
-        contacts_list, interface_res, total_strength = contacts.contact_detection(parsed_data, context.region, context.interface, context.custom_distances, context.epsilon)
+        contacts_list, interface_res, total_strength, count_contacts = contacts.contact_detection(parsed_data, context)
         process_time = timer() - start_time
-        return parsed_data, contacts_list, process_time, interface_res, total_strength
+        return parsed_data, contacts_list, process_time, interface_res, total_strength, count_contacts
 
     except Exception as e:
         print(f"Error processing {file_path}: {e}")
         return None
 
 
-def process_result(result, output):
+def process_result(result, context):
     """
     Handles the result of processing a file.
 
@@ -198,15 +206,22 @@ def process_result(result, output):
         output (str): The directory where output files will be saved.
     """
     if result:
-        protein, contacts_list, process_time, interface_res, total_strength = result
+        protein, contacts_list, process_time, interface_res, total_strength, count_contacts = result
+        output, interface = context.output, context.interface
         
         # chain_ids = [chain.id for chain in protein.get_chains()]
         # chains = ":".join(chain_ids)
         # print(f"{protein.id},{chains}")
         
+        count = '; '.join(f"{v[0]}: {v[1]:>5}" for v in count_contacts.values())
         output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
         print(output_data)
-        print(f"Total contact strength: {total_strength:.2f}")
+        print(count)
+
+        if interface:
+            print(f"Total interface contact strength: {f'{total_strength:.2f}' if total_strength is not None else 'N/A'}\n")
+        else:
+            print()
         
         if output:
             output_folder = f"{output}/{protein.id}/"

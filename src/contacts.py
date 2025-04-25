@@ -14,7 +14,7 @@ from src.distances import distances
 import src.conditions as conditions
 
 
-def contact_detection(protein, region, interface, custom_distances, epsilon):
+def contact_detection(protein, context):
     """
     Detects contacts between atoms in a given protein.
 
@@ -24,11 +24,24 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
     Returns:
         list: A list of Contact objects representing the detected contacts.
     """
-
+    region, interface, custom_distances, epsilon = context.region, context.interface, context.custom_distances, context.epsilon
     residues = list(protein.get_residues())
     contacts = []
     interface_res = set()
     max_ca_distance = 20.47 # 0.01 higher than the Arg-Arg pair
+    
+    count_contacts = {
+        "hydrogen_bond":["HB",0],
+        "hydrophobic":["HY",0],
+        "attractive":["AT",0],
+        "repulsive":["RE",0],
+        "salt_bridge":["SB",0],
+        "disulfide_bond":["DS",0],
+        "stacking":["AS",0],
+        "polar-apolar":["PA",0],
+        "pos-apolar":["PosA",0],
+        "neg-apolar":["NegA",0]
+    }
     
     total_strength = 0
     
@@ -39,7 +52,10 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
         'attractive': 10.0,
         'repulsive': 10.0,
         'salt_bridge': 10.0,
-        'disulfide_bond': 85.0
+        'disulfide_bond': 85.0,
+        'polar-apolar': 0,
+        'pos-apolar': 0,
+        'neg-apolar': 0
     }
 
     
@@ -96,6 +112,8 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
                                     protein.id, residue2.chain.id, residue2.resnum, residue2.resname, ring2.atomname, 
                                     float(f"{distance:.2f}"), "stacking"+stack_type, ring1, ring2)
                     
+                    count_contacts['stacking'][1] += 1
+                    
                     contacts.append(contact)
                     
             for atom1 in residue1.atoms:
@@ -117,19 +135,31 @@ def contact_detection(protein, region, interface, custom_distances, epsilon):
                                 if contact_type == 'hydrogen_bond' and (abs(residue2.resnum - residue1.resnum) <= 3): # skips alpha-helix for h-bonds
                                     continue
                                 
+                                if contact_type in ['polar-apolar', 'pos-apolar', 'neg-apolar'] and not interface:
+                                    continue
+                                
                                 if distance_range[0] <= distance <= distance_range[1]: # fits the range
                                     if conditions.contact_conditions[contact_type](name1, name2): # fits the type of contact
-                                                                                                
+                                        
                                         contact = Contact(protein.id, residue1.chain.id, residue1.resnum, residue1.resname, atom1.atomname, 
                                                         protein.id, residue2.chain.id, residue2.resnum, residue2.resname, atom2.atomname, 
                                                         float(f"{distance:.2f}"), contact_type, atom1, atom2)
                                         contacts.append(contact)
-                                        
                                         interface_res.add(f"{residue1.chain.id},{residue1.resnum},{residue1.resname}")
                                         
-                                        total_strength += contact_strength[contact_type]
-                                 
-    return contacts, interface_res, total_strength
+                                        count_contacts[contact_type][1] += 1
+                                        
+                                        # if contact_type in ['polar-apolar', 'pos-apolar', 'neg-apolar']:
+                                        #     print(protein.id, residue1.chain.id, residue1.resnum, residue1.resname, atom1.atomname, 
+                                        #                 protein.id, residue2.chain.id, residue2.resnum, residue2.resname, atom2.atomname, 
+                                        #                 float(f"{distance:.2f}"), contact_type)
+                                        
+                                        if interface: 
+                                            total_strength += contact_strength[contact_type]
+    if total_strength == 0:
+        total_strength = None
+
+    return contacts, interface_res, total_strength, count_contacts
 
 
 def show_contacts(contacts):
