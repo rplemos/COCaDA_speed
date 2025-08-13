@@ -200,7 +200,6 @@ def log(message, silent=False):
         print(message)
 
 
-
-def print_memory_usage():
-    usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000.0  # Convert to MB
-    print(f"Maximum memory usage: {usage} MB")
+# def print_memory_usage():
+#     usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000.0  # Convert to MB
+#     print(f"Maximum memory usage: {usage} MB")

@@ -65,7 +65,7 @@ def main():
     
     process.log("\n------------------------------------\n", silent)
     process.log(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n", silent)
-    process.print_memory_usage()
+    #process.print_memory_usage()
 
 
 if __name__ == "__main__":

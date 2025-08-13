@@ -421,7 +421,7 @@ def create_contacts(contacts_by_pair, cluster):
     return contacts, total_strength, count_types
 
 
-def cluster_numbers(chimera_resnumbers, linkers, max_gap=3, min_cluster_size=5):
+def cluster_numbers(chimera_resnumbers, linkers, max_gap=3, min_cluster_size=0):
     if not chimera_resnumbers:
         return []
 
