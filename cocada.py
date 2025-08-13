@@ -6,15 +6,11 @@ License: MIT License
 """
 
 import os
-import json
 from timeit import default_timer as timer
-from itertools import islice
 
-import src.parser as parser
 import src.argparser as argparser
-import src.contacts as contacts
 import src.classes as classes
-
+import src.process as process
 
 def main():
     """
@@ -26,225 +22,50 @@ def main():
     """
     global_time_start = timer()
     
-    file_list, core, output, region, interface, custom_distances = argparser.cl_parse()
+    file_list, core, output, region, chains, interface, custom_distances, ph, silent = argparser.cl_parse()
     
-    print("--------------COCaDA----------------\n")
+    process.log("\n--------------COCaDA----------------\n", silent)
     
     # context object for shared parameters
-    context = classes.ProcessingContext(core=core, output=output, region=region, interface=interface, custom_distances=custom_distances)
+    context = classes.ProcessingContext(core=core, output=output, region=region, chains=chains, interface=interface, custom_distances=custom_distances, ph=ph, silent=silent)
 
     if core is not None:  # Set specific core affinity
-        print("Multicore mode selected.")
+        process.log("Multicore mode selected.", silent)
     else:
-        print("Running on single mode with no specific core.")
+        process.log("Running on single mode with no specific core.", silent)
 
     if interface:
-        print("Calculating only interface contacts.") 
+        process.log("Calculating only interface contacts.", silent)
+        
+    if region:
+        process.log(f"Calculating contacts in the region: {region}", silent)
+    
+    if chains:
+        process.log(f"Calculating contacts in the chains: {chains}", silent) 
                
     if output:
-        print(f"Generating outputs in '{output}' folder.")
+        process.log(f"Generating outputs in '{output}' folder.", silent)
         if not os.path.exists(output):
             os.makedirs(output)
     else:
         output = None
         
+    if ph:
+        process.log(f"Changing protonation states of pH-sensitive atoms using pH value of {ph}.\n", silent)
+        
     if custom_distances:
-        print("Using custom distances provided by the user.")
-        with open("./contact_distances.json","r") as f:
-            loaded_distances = json.load(f)
-        try:
-            validated_distances = validate_categories({key: tuple(value) for key, value in loaded_distances.items()})
-            max_value = max(y for x in validated_distances.values() for y in x)
-            if max_value > 6:
-                context.epsilon = max_value - 6
-        except ValueError as e:
-            print(e)  
-            exit(1)
+        process.log("Using custom distances provided by the user.", silent)
+        max_value = max(y for x in custom_distances.values() for y in x)
+        if max_value > 6:
+            context.epsilon = max_value - 6
             
-        context.custom_distances = validated_distances
-
-    print()
-    process_func = single if core is None else multi_batch
+    process.log("\n", silent)
+    process_func = process.single if core is None else process.multi_batch
     process_func(file_list, context)
     
-    print("\n------------------------------------\n")
-    print(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n")
-
-
-def single(file_list, context):
-    """
-    Processes a list of files in single-core mode.
-
-    Args:
-        file_list (list): List of file paths to process.
-        context (ProcessingContext): Context object containing parameters such as core, output, and region.
-
-    This function processes each file in the list sequentially, detects contacts, and outputs the results to the console or to a file, depending on the 'output' flag.
-    """
-    for file in file_list:
-        try:
-            result = process_file(file, context)
-            process_result(result, context)
-        except Exception as e:
-            print(f"Error: {e}")
-
-
-def multi_batch(file_list, context):
-    """
-    Distributes the processing of files across multiple cores in batches.
-
-    Args:
-        file_list (list): List of file paths to process.
-        context (ProcessingContext): Context object containing parameters such as core, output, and region.
-    """
-    core = context.core
-
-    try:
-        from concurrent.futures import ProcessPoolExecutor, as_completed
-        from psutil import Process
-        
-        Process(os.getpid()).cpu_affinity(core)             
-        if len(core) == 1: # One specific core
-            print(f"Running on core {core[0]}.")
-        elif core[-1] - core[0] == len(core) - 1:  # Range
-            print(f"Running on cores {core[0]} to {core[-1]}\nTotal number of cores: {len(core)}")
-        else: # List
-            print(f"Running on cores: {', '.join(map(str, core))}\nTotal number of cores: {len(core)}")
-         
-        num_cores = len(core)
-        batch_size = max(1, len(file_list) // num_cores)
-        print(f"Number of files: {len(file_list)} | Batch size: {batch_size} files per core")
-        print()
-        
-        with ProcessPoolExecutor(max_workers=num_cores) as executor:
-            futures = {executor.submit(process_batch, batch, context): batch
-                    for batch in batch_generator(file_list, batch_size)}
-
-            for future in as_completed(futures):  # Wait for all batches to complete
-                try:
-                    future.result()  # Process results from batch
-                except Exception as e:
-                    print(f"Error processing batch: {e}")
-                finally:
-                    del futures[future] 
-    except ImportError:
-        print("Error.")
-        exit(1)
-
-
-def process_batch(batch, context):
-    """
-    Processes a single batch of files sequentially.
-
-    Args:
-        batch (list): List of file paths in the batch.
-        context (ProcessingContext): Context object containing parameters such as core, output, and region.
-    """
-    for file_path in batch:
-        result = process_file(file_path, context)
-        if result:
-            process_result(result, context)
-
-
-def batch_generator(file_list, batch_size):
-    """
-    Generates batches from the file list.
-
-    Args:
-        file_list (list): List of file paths to split into batches.
-        batch_size (int): Maximum number of files per batch.
-
-    Yields:
-        list of str: Next batch of file paths.
-    """
-    it = iter(file_list)
-    while batch := list(islice(it, batch_size)):
-        yield batch
-
-
-def process_file(file_path, context):
-    """
-    Processes a single file for contact detection.
-
-    Args:
-        file_path (str): Path to the file to be processed.
-        context (ProcessingContext): Context object containing parameters such as core, output, and region.
-
-    Returns:
-        tuple: A tuple containing the processed Protein object, the list of detected contacts, and the processing time.
-        None: If the file cannot be processed or an error occurs.
-
-    This function parses the PDB or mmCIF file, detects contacts, and returns the results. If an error occurs during processing, it logs the error and returns None.
-    """
-    start_time = timer()
-
-    try:
-        parsed_data = parser.parse_pdb(file_path) if file_path.endswith(".pdb") else parser.parse_cif(file_path)
-
-        if parsed_data.true_count() > 10000:  # Skip very large proteins (customizable)
-            print(f"Skipping ID '{parsed_data.id}'. Size: {parsed_data.true_count()} residues\n") 
-            if context.output:
-                with open(f"{context.output}/big.csv", "a") as f:
-                    f.write(f"{parsed_data.id},{parsed_data.title},{parsed_data.true_count()},x\n")
-            return None
-
-        contacts_list, interface_res, total_strength, count_contacts = contacts.contact_detection(parsed_data, context)
-        process_time = timer() - start_time
-        return parsed_data, contacts_list, process_time, interface_res, total_strength, count_contacts
-
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-        return None
-
-
-def process_result(result, context):
-    """
-    Handles the result of processing a file.
-
-    Args:
-        result (tuple): A tuple containing the processed Protein object, contacts list, and processing time.
-        output (str): The directory where output files will be saved.
-    """
-    if result:
-        protein, contacts_list, process_time, interface_res, total_strength, count_contacts = result
-        output, interface = context.output, context.interface
-        
-        # chain_ids = [chain.id for chain in protein.get_chains()]
-        # chains = ":".join(chain_ids)
-        # print(f"{protein.id},{chains}")
-        
-        count = '; '.join(f"{v[0]}: {v[1]:>5}" for v in count_contacts.values())
-        output_data = f"ID: {protein.id} | Size: {protein.true_count():<7} | Contacts: {len(contacts_list):<7} | Time: {process_time:.3f}s"
-        print(output_data)
-        print(count)
-
-        if interface:
-            print(f"Total interface contact strength: {f'{total_strength:.2f}' if total_strength is not None else 'N/A'}\n")
-        else:
-            print()
-        
-        if output:
-            output_folder = f"{output}/{protein.id}/"
-            
-            if not os.path.exists(output_folder):
-                os.makedirs(output_folder)
-            
-            with open(f"{output_folder}/{protein.id}_contacts.csv","w") as f:
-                f.write(contacts.show_contacts(contacts_list))
-            
-            ## Created for COCaDA_speed ###
-            with open(f"{output_folder}/{protein.id}_interface.csv", "w") as f:
-                for res in interface_res:
-                    f.write(f"{res}\n")  # Writes each residue on a new line
-
-
-def validate_categories(categories):
-    for key, (min_val, max_val) in categories.items():
-        if min_val < 0 or max_val < 0:
-            raise ValueError(f"Invalid values for '{key}': values must be positive.")
-        if min_val >= max_val:
-            raise ValueError(f"Invalid range for '{key}': min ({min_val}) must be less than max ({max_val}).")
-    return categories
+    process.log("\n------------------------------------\n", silent)
+    process.log(f"Total time elapsed: {(timer() - global_time_start):.3f}s\n", silent)
+    process.print_memory_usage()
 
 
 if __name__ == "__main__":
