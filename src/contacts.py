@@ -444,7 +444,7 @@ def cluster_numbers(chimera_resnumbers, linkers, max_gap=3, min_cluster_size=0):
     if current_cluster:
         clusters.append(current_cluster)
         
-    print(clusters)
+    #print(clusters)
     
     longest_cluster = max(clusters, key=len)
     return longest_cluster if (longest_cluster[-1] - longest_cluster[0]+1) >= min_cluster_size else []
