@@ -136,8 +136,8 @@ def process_file(file_path, context):
             if ph != 7.4:
                 log(f"Found experimental protein pH value at {ph}. You can change this using the -ph flag.", context.silent)
                 log(f"Changing protonation states of pH-sensitive atoms using pH value of {ph}.", context.silent)
-            else:
-                log("Defaulting pH value to 7.4.", context.silent)
+            #else:
+                #log("Defaulting pH value to 7.4.", context.silent)
         else:
             uncertainty_flags, local_contact_types = contacts.change_protonation(context.ph, context.silent)
 
@@ -182,6 +182,10 @@ def process_result(result, context):
             
             with open(f"{output_folder}/{protein.id}_contacts.csv","w") as f:
                 f.write(contacts.show_contacts(contacts_list))
+                
+            with open(f"{output_folder}/contact_strength.txt", "a") as f:
+                f.write(f"{protein.id}\n")
+                f.write(f"{f'{total_strength:.2f}' if total_strength is not None else 'N/A'}\n\n")
                     
             # COCaDA-web exclusive
             # number_contacts = contacts.count_contacts(contacts_list)
