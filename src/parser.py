@@ -115,6 +115,8 @@ def parse_pdb(pdb_file):
                 resname = residue_mapping.get(resname)                      
 
                 if current_chain is None or current_chain.id != chain_id:  # new chain
+                    if current_residue and len(current_residue.atoms) >= 1: # last residue of previous chain
+                        current_chain.residues.append(current_residue) 
                     residues = []
                     current_chain = Chain(chain_id, residues)
                     current_protein.chains.append(current_chain)
@@ -166,7 +168,9 @@ def parse_pdb(pdb_file):
                             normal_vector = calc_normal_vector(ring_atoms)
                             current_residue.normal_vector = normal_vector
                             
-            elif line.startswith("END"):  
+            elif line.startswith("END"):
+                if resname in residue_mapping.values():
+                    current_chain.residues.append(current_residue) # appends the last residue  
                 # Handling cases where there is no ID
                 if current_protein.id is None:
                     id = str(pdb_file).split("/")[-1]
@@ -322,9 +326,11 @@ def parse_cif(cif_file):
                 if resname not in residue_mapping:
                     continue
                 
-                resname = residue_mapping[resname]                            
+                resname = residue_mapping[resname]
 
                 if current_chain is None or current_chain.id != chain_id:  # new chain
+                    if current_residue and len(current_residue.atoms) >= 1: # last residue of previous chain
+                        current_chain.residues.append(current_residue) 
                     residues = []
                     current_chain = Chain(chain_id, residues)
                     current_protein.chains.append(current_chain)
@@ -378,7 +384,7 @@ def parse_cif(cif_file):
                             current_residue.normal_vector = normal_vector
 
             elif atominfo_block and line == "#":
-                if resname in residue_mapping:
+                if resname in residue_mapping.values():
                     current_chain.residues.append(current_residue) # appends the last residue
                 atominfo_block = False 
     
