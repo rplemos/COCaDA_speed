@@ -316,7 +316,7 @@ def change_protonation(ph, silent):
     #     'C': ['SG'],
     #     'Y': ['OH'],
     # }
-    pH_sentitive_atoms = {}
+    pH_sensitive_atoms = {}
     
     uncertainty_flags = {}
     local_contact_types = deepcopy(conditions.contact_types)
